@@ -1,0 +1,2 @@
+C:\ArcelorMittal\Development\Print service\PrintWindowsService\PrintWindowsService\bin\Debug\PrintWindowsService.exe.config
+C:\ArcelorMittal\Development\Print service\PrintWindowsService\PrintWindowsService\obj\Debug\PrintWindowsService.csproj.ResolveComReference.cache

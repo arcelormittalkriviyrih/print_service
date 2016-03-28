@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintWindowsService", "PrintWindowsService\PrintWindowsService.csproj", "{5B2B9B73-E804-4AE5-B951-F4595AA2099C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTestProject", "UnitTestProject\UnitTestProject.csproj", "{D2AAC3B8-9B3E-4B5B-9FE4-11211A0DF49C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{153D976D-2EE9-4D35-8B81-C1742F343A81} = {153D976D-2EE9-4D35-8B81-C1742F343A81}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintWindowsTray", "PrintWindowsTray\PrintWindowsTray.csproj", "{153D976D-2EE9-4D35-8B81-C1742F343A81}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5B2B9B73-E804-4AE5-B951-F4595AA2099C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B2B9B73-E804-4AE5-B951-F4595AA2099C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B2B9B73-E804-4AE5-B951-F4595AA2099C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B2B9B73-E804-4AE5-B951-F4595AA2099C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2AAC3B8-9B3E-4B5B-9FE4-11211A0DF49C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2AAC3B8-9B3E-4B5B-9FE4-11211A0DF49C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2AAC3B8-9B3E-4B5B-9FE4-11211A0DF49C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2AAC3B8-9B3E-4B5B-9FE4-11211A0DF49C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{153D976D-2EE9-4D35-8B81-C1742F343A81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{153D976D-2EE9-4D35-8B81-C1742F343A81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{153D976D-2EE9-4D35-8B81-C1742F343A81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{153D976D-2EE9-4D35-8B81-C1742F343A81}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 4
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = http://109.95.53.22:33362/tfs/bulkteq
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = PrintWindowsService\\PrintWindowsService.csproj
+		SccProjectName1 = PrintWindowsService
+		SccLocalPath1 = PrintWindowsService
+		SccProjectUniqueName2 = UnitTestProject\\UnitTestProject.csproj
+		SccProjectName2 = UnitTestProject
+		SccLocalPath2 = UnitTestProject
+		SccProjectUniqueName3 = PrintWindowsTray\\PrintWindowsTray.csproj
+		SccProjectName3 = PrintWindowsTray
+		SccLocalPath3 = PrintWindowsTray
+	EndGlobalSection
+EndGlobal
