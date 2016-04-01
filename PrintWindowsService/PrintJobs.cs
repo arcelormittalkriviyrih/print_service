@@ -5,9 +5,11 @@ using System.Text;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+//using System.Runtime.InteropServices;
 using Excel = Microsoft.Office.Interop.Excel;
 using System.IO;
+using System.Security.Principal;
+using System.Reflection;
 
 namespace PrintWindowsService
 {
@@ -18,7 +20,7 @@ namespace PrintWindowsService
         /// <summary>
         /// The name of the system event source used by this service.
         /// </summary>
-        private const string cSystemEventSourceName = "ArcelorMittal.PrintService.EventSouce";
+        private const string cSystemEventSourceName = "ArcelorMittal.PrintService.EventSource";
 
         /// <summary>
         /// The name of the system event log used by this service.
@@ -48,7 +50,7 @@ namespace PrintWindowsService
         /// Time interval for checking print tasks
         /// </summary>
         private System.Timers.Timer m_PrintTimer;
-
+        private bool fJobStarted = false;
         #endregion
 
         #region vpEventLog
@@ -69,14 +71,25 @@ namespace PrintWindowsService
                 {
                     if (m_EventLog == null)
                     {
+                        string lSystemEventLogName = cSystemEventLogName;
                         m_EventLog = new EventLog();
                         if (!System.Diagnostics.EventLog.SourceExists(cSystemEventSourceName))
                         {
-                            System.Diagnostics.EventLog.CreateEventSource(cSystemEventSourceName, cSystemEventLogName);
+                            System.Diagnostics.EventLog.CreateEventSource(cSystemEventSourceName, lSystemEventLogName);
+                        }
+                        else
+                        {
+                            lSystemEventLogName = EventLog.LogNameFromSourceName(cSystemEventSourceName, ".");
                         }
                         m_EventLog.Source = cSystemEventSourceName;
-                        m_EventLog.Log = cSystemEventLogName;
-                        m_EventLog.ModifyOverflowPolicy(OverflowAction.OverwriteAsNeeded, 7);
+                        m_EventLog.Log = lSystemEventLogName;
+
+                        WindowsIdentity identity = WindowsIdentity.GetCurrent();
+                        WindowsPrincipal principal = new WindowsPrincipal(identity);
+                        if (principal.IsInRole(WindowsBuiltInRole.Administrator))
+                        {
+                            m_EventLog.ModifyOverflowPolicy(OverflowAction.OverwriteAsNeeded, 7);
+                        }
                     }
                     return m_EventLog;
                 }
@@ -91,6 +104,14 @@ namespace PrintWindowsService
         string tmpExcelFile;
         DataTable tableLabelProperty;
 
+        public bool JobStarted
+        {
+            get
+            {
+                return fJobStarted;
+            }
+        }
+
         #region Constructor
 
         public PrintJobs()
@@ -103,11 +124,23 @@ namespace PrintWindowsService
             m_PrintTimer = new System.Timers.Timer();
             m_PrintTimer.Interval = printTaskFrequencyInSeconds * 1000; // seconds to milliseconds
             m_PrintTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.OnPrintTimer);
-            tmpExcelFile = Path.GetTempPath() + "Label.xls";
-
+            tmpExcelFile = Path.GetTempPath() + "Label.xls"; //Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\Label.xls";
+            //vpEventLog.WriteEntry(string.Format("File - {0}", tmpExcelFile));
             vpEventLog.WriteEntry(string.Format("Print Task Frequncy = {0}", printTaskFrequencyInSeconds));
         }
 
+        #endregion
+
+        #region Destructor
+
+        ~ PrintJobs()
+        {
+            if (m_EventLog != null)
+            {
+                m_EventLog.Close();
+                m_EventLog.Dispose();
+            }
+        }
         #endregion
 
         #region Methods
@@ -122,36 +155,50 @@ namespace PrintWindowsService
             {
                 xl = new Excel.Application();// Если нет, то создаём новое приложение
             }*/
-            if (xl == null)
+            try
             {
-                xl = new Excel.Application();
+                if (xl == null)
+                {
+                    xl = new Excel.Application();
+                }
+
+                //обход ошибки: System.Runtime.InteropServices.COMException (0x80028018): Использован старый формат, либо библиотека имеет неверный тип
+                oldCI = System.Threading.Thread.CurrentThread.CurrentCulture;
+                newCI = new System.Globalization.CultureInfo("en-US");
+                System.Threading.Thread.CurrentThread.CurrentCulture = newCI;
+
+                //xl.UserControl = false;
+                xl.DisplayAlerts = false;
+                //xl.Interactive = false;
+                //xl.Visible = true;
             }
-
-            //обход ошибки: System.Runtime.InteropServices.COMException (0x80028018): Использован старый формат, либо библиотека имеет неверный тип
-            oldCI = System.Threading.Thread.CurrentThread.CurrentCulture;
-            newCI = new System.Globalization.CultureInfo("en-US");
-            System.Threading.Thread.CurrentThread.CurrentCulture = newCI;
-
-            xl.UserControl = true;
-            xl.DisplayAlerts = false;
-            //xl.Visible = true;
+            catch (Exception ex)
+            {
+                vpEventLog.WriteEntry("Error of Excel start: " + ex.ToString(), EventLogEntryType.Error);
+            }
 
             vpEventLog.WriteEntry("Starting print service...");
 
             m_PrintTimer.Start();
 
             vpEventLog.WriteEntry("Print service has been started");
+            fJobStarted = true;
         }
 
         public void StopJob()
         {
             if (xl != null)
             {
-                xl.DisplayAlerts = false;
+                if (xl.Workbooks.Count > 0)
+                {
+                    xl.ActiveWorkbook.Close(false);
+                }
                 xl.Quit();
                 System.Threading.Thread.CurrentThread.CurrentCulture = newCI;
                 xl.DisplayAlerts = true;
                 System.Threading.Thread.CurrentThread.CurrentCulture = oldCI;
+                //xl = null;
+                //GC.GetTotalMemory(true);
             }
 
             vpEventLog.WriteEntry("Stopping print service...");
@@ -161,6 +208,7 @@ namespace PrintWindowsService
                 m_PrintTimer.Stop();
 
             vpEventLog.WriteEntry("Print service has been stopped");
+            fJobStarted = false;
         }
 
         public void OnPrintTimer(object sender, System.Timers.ElapsedEventArgs args)
@@ -173,6 +221,7 @@ namespace PrintWindowsService
             //временно
             if (xl == null)
             {
+                /*
                 try
                 {// Присоединение к открытому приложению Excel (если оно открыто)
                     xl = (Excel.Application)Marshal.GetActiveObject("Excel.Application");
@@ -181,15 +230,16 @@ namespace PrintWindowsService
                 {
                     xl = new Excel.Application();// Если нет, то создаём новое приложение
                 }
+                */
+                //работаем со своим экземпляром Excel
+                xl = new Excel.Application();
 
-                //xl = new Excel.Application();
-                //            xl.Visible = true;
                 if (newCI == null)
                 {
                     newCI = new System.Globalization.CultureInfo("en-US");
                 }
                 System.Threading.Thread.CurrentThread.CurrentCulture = newCI;
-                xl.UserControl = true;
+                xl.UserControl = false;
             }
 
             SqlConnection dbConnection = new SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings[cConnectionStringName].ConnectionString);
@@ -304,9 +354,11 @@ namespace PrintWindowsService
 
                         if (XlFile.Length > 0)
                         {
-                            FileStream fs = new FileStream(tmpExcelFile, FileMode.Create);
-                            fs.Write(XlFile, 0, XlFile.Length);
-                            fs.Close();
+                            using (FileStream fs = new FileStream(tmpExcelFile, FileMode.Create))
+                            {
+                                fs.Write(XlFile, 0, XlFile.Length);
+                                fs.Close();
+                            }
 
                             if (PrintRange(ToPrinterName, IpAddress, QuantityParam))
                             {
@@ -316,11 +368,11 @@ namespace PrintWindowsService
                             {
                                 printState = "Failed";
                             }
-                            vpEventLog.WriteEntry(String.Format("ProductionResponseID: {0}. Print to: {1}. Status: {2}", ToPrinterName, printState, dbReaderProdResponse["ID"]));
+                            vpEventLog.WriteEntry(String.Format("ProductionResponseID: {0}. Print to: {1}. Status: {2}", dbReaderProdResponse["ID"], ToPrinterName, printState), printState == "Failed"? EventLogEntryType.FailureAudit : EventLogEntryType.SuccessAudit);
                         }
                         else
                         {
-                            vpEventLog.WriteEntry("Excel template is empty");
+                            vpEventLog.WriteEntry("Excel template is empty", EventLogEntryType.Error);
                             printState = "Failed";
                         }
 
@@ -337,7 +389,7 @@ namespace PrintWindowsService
             }
             catch (Exception ex)
             {
-                vpEventLog.WriteEntry("Get data from DB. Error: " + ex.ToString());
+                vpEventLog.WriteEntry("Get data from DB. Error: " + ex.ToString(), EventLogEntryType.Error);
             }
             finally
             {
@@ -351,6 +403,7 @@ namespace PrintWindowsService
             m_PrintTimer.Start();
         }
 
+        /*
         public static class myPrinters
         {
             [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
@@ -389,6 +442,7 @@ namespace PrintWindowsService
 
             }
         }
+        */
 
         //чтение параметров из бд
         public string GetParamaterFromDb(string aTypeProperty, string aClassPropertyID)
@@ -415,7 +469,7 @@ namespace PrintWindowsService
                 System.Net.NetworkInformation.PingReply printerReply = printerPing.Send(IpAdress, pingTimeoutInSeconds);
                 if (printerReply.Status != System.Net.NetworkInformation.IPStatus.Success)
                 {
-                    vpEventLog.WriteEntry(string.Format("Printer {0}  {1}  ping timeout status {2}", toPrinterName, IpAdress, printerReply.Status));
+                    vpEventLog.WriteEntry(string.Format("Printer {0}  {1}  ping timeout status {2}", toPrinterName, IpAdress, printerReply.Status), EventLogEntryType.Warning);
                     return false;
                 }
             }
@@ -446,7 +500,16 @@ namespace PrintWindowsService
             //System.Globalization.CultureInfo oldCI = System.Threading.Thread.CurrentThread.CurrentCulture;
             //System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
             System.Threading.Thread.CurrentThread.CurrentCulture = newCI;
-            xl.Workbooks.Add(tmpExcelFile);//@"D:\template.xls");
+            try
+            {
+                xl.Workbooks.Add(tmpExcelFile);//@"D:\template.xls");
+            }
+            catch (Exception ex)
+            {
+                vpEventLog.WriteEntry("Can not open file. Error: " + ex.ToString(), EventLogEntryType.Error);
+                return false;
+            }
+
             Excel.Worksheet WsFirst = (Excel.Worksheet)xl.ActiveWorkbook.ActiveSheet; // get_Item(1); //(Excel.Worksheet)lWb.ActiveSheet; //
 
             Excel.Range FindParamValue;
@@ -468,7 +531,7 @@ namespace PrintWindowsService
             }
             catch (Exception ex)
             {
-                vpEventLog.WriteEntry("Parameters sheet is not found. Error: " + ex.ToString());
+                vpEventLog.WriteEntry("Parameters sheet is not found. Error: " + ex.ToString(), EventLogEntryType.Warning);
             }
 
             /* установка значений свойств для этикетки
@@ -526,7 +589,7 @@ namespace PrintWindowsService
             {
                 //myPrinters.SetDefaultPrinter(toPrinterName);
                 xl.PrintCommunication = false;
-                WsFirst.PageSetup.Orientation = Excel.XlPageOrientation.xlPortrait;
+                WsFirst.PageSetup.Orientation = Excel.XlPageOrientation.xlLandscape;
                 WsFirst.PageSetup.CenterHorizontally = false;
                 WsFirst.PageSetup.CenterVertically = false;
                 WsFirst.PageSetup.LeftMargin = 0;
@@ -537,6 +600,7 @@ namespace PrintWindowsService
                 WsFirst.PageSetup.FooterMargin = 0;
                 WsFirst.PageSetup.FitToPagesWide = 1;
                 WsFirst.PageSetup.ScaleWithDocHeaderFooter = true;
+                //WsFirst.PageSetup.PaperSize = Excel.XlPaperSize.xlPaperUser;
                 //System.Drawing.Printing.PrintDocument pd = new System.Drawing.Printing.PrintDocument();
                 //pd.PrintPage += new System.Drawing.Printing.PrintPageEventHandler(pd_PrintPage);
                 // Specify the printer to use.
@@ -555,11 +619,14 @@ namespace PrintWindowsService
             System.Threading.Thread.CurrentThread.CurrentCulture = oldCI;*/
             catch (Exception ex)
             {
-                vpEventLog.WriteEntry("Print еrror: " + ex.ToString());
+                vpEventLog.WriteEntry("Print еrror: " + ex.ToString(), EventLogEntryType.Error);
             }
             finally
             {
-                xl.ActiveWorkbook.Close(false);
+                if (xl.Workbooks.Count > 0)
+                {
+                    xl.ActiveWorkbook.Close(false);
+                }
                 WsFirst = null;
                 WsParams = null;
                 FindParamValue = null;

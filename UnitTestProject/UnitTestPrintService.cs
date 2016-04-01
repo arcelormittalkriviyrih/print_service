@@ -13,7 +13,8 @@ namespace PrintWindowsService.Tests
             PrintJobs pJobTest = new PrintJobs();
 
             pJobTest.StartJob();
-            pJobTest.OnPrintTimer(this, new EventArgs() as System.Timers.ElapsedEventArgs);
+            pJobTest.StopJob();
+            //pJobTest.OnPrintTimer(this, new EventArgs() as System.Timers.ElapsedEventArgs);
             //printService.PrintRange("TSC TTP-268M", "192.168.100.246");//"TSC TTP-268M");//ExportRangeAsBmp(); //PrintBmp();//
 
             Assert.IsTrue(true);

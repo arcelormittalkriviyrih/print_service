@@ -25,14 +25,20 @@ namespace PrintWindowsService
 
         private void mItemStart_Click(object sender, EventArgs e)
         {
-            pJobs.StartJob();
+            if (!pJobs.JobStarted)
+            {
+                pJobs.StartJob();
+            }
             this.mItemStart.Enabled = false;
             this.mItemStop.Enabled = true;
         }
 
         private void mItemStop_Click(object sender, EventArgs e)
         {
-            pJobs.StopJob();
+            if (pJobs.JobStarted)
+            {
+                pJobs.StopJob();
+            }
             this.mItemStart.Enabled = true;
             this.mItemStop.Enabled = false;
         }
@@ -44,7 +50,10 @@ namespace PrintWindowsService
 
         private void mItemExit_Click(object sender, EventArgs e)
         {
-            pJobs.StopJob();
+            if (pJobs.JobStarted)
+            {
+                pJobs.StopJob();
+            }
             Application.Exit();
         }
     }
