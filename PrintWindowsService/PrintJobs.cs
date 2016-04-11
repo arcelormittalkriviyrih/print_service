@@ -5,11 +5,20 @@ using System.Text;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
-//using System.Runtime.InteropServices;
 using Excel = Microsoft.Office.Interop.Excel;
 using System.IO;
 using System.Security.Principal;
-using System.Reflection;
+//using System.Reflection;
+//using Aspose.Cells;
+//using Aspose.Cells.Rendering;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+
+//using DocumentFormat.OpenXml;
+//using DocumentFormat.OpenXml.Packaging;
+//using DocumentFormat.OpenXml.Spreadsheet;
+
 
 namespace PrintWindowsService
 {
