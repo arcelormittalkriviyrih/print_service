@@ -90,9 +90,23 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\PrintWindowsService\PrintJobs.cs">
+    <Compile Include="..\Modules\excelApp.cs">
+      <Link>excelApp.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\jobProps.cs">
+      <Link>jobProps.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\labelDbData.cs">
+      <Link>labelDbData.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\PrintJobs.cs">
       <Link>PrintJobs.cs</Link>
-      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="..\Modules\printLabel.cs">
+      <Link>printLabel.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\serviceMonitor.cs">
+      <Link>serviceMonitor.cs</Link>
     </Compile>
     <Compile Include="frmMain.cs">
       <SubType>Form</SubType>

@@ -75,8 +75,23 @@
     <Reference Include="System.Web.Extensions" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PrintJobs.cs">
-      <SubType>Component</SubType>
+    <Compile Include="..\Modules\excelApp.cs">
+      <Link>excelApp.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\jobProps.cs">
+      <Link>jobProps.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\labelDbData.cs">
+      <Link>labelDbData.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\PrintJobs.cs">
+      <Link>PrintJobs.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\printLabel.cs">
+      <Link>printLabel.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\serviceMonitor.cs">
+      <Link>serviceMonitor.cs</Link>
     </Compile>
     <Compile Include="PrintService.cs">
       <SubType>Component</SubType>
