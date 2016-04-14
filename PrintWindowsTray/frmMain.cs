@@ -18,7 +18,6 @@ namespace PrintWindowsService
         {
             InitializeComponent();
             this.ShowInTaskbar = false;
-            this.Visible = false;
             pJobs = new PrintJobs();
             pJobs.StartJob();
         }

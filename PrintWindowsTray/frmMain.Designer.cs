@@ -96,14 +96,13 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(284, 262);
+            this.ClientSize = new System.Drawing.Size(116, 6);
             this.Name = "frmMain";
             this.ShowInTaskbar = false;
             this.Text = "Label Print";
             this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
             this.contextMenuTray.ResumeLayout(false);
             this.ResumeLayout(false);
-
         }
 
         #endregion

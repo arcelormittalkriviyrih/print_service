@@ -8,20 +8,41 @@ using System.Diagnostics;
 using Excel = Microsoft.Office.Interop.Excel;
 using System.IO;
 using System.Security.Principal;
-//using System.Reflection;
+using System.Management;
+using System.Management.Instrumentation;
+using System.Reflection;
+
+[assembly:Instrumented("root\\PrintWindowsService")]
 //using Aspose.Cells;
 //using Aspose.Cells.Rendering;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
+//using System.Drawing;
+//using System.Drawing.Imaging;
+//using System.Runtime.InteropServices;
 
 //using DocumentFormat.OpenXml;
 //using DocumentFormat.OpenXml.Packaging;
 //using DocumentFormat.OpenXml.Spreadsheet;
 
+[System.ComponentModel.RunInstaller(true)]
+public class PWSInstaller :
+DefaultManagementProjectInstaller
+{ }
 
 namespace PrintWindowsService
 {
+    [InstrumentationClass(InstrumentationType.Instance)]
+    // for WMI
+    public class ProductInfo
+    {
+        public string Name;
+        public string ComputerName;
+        public string Version;
+        public DateTime StartTime;
+        public int printTaskFrequencyInSeconds;
+        public int pingTimeoutInSeconds;
+        public string DBConnectionString;
+    }
+
     public class PrintJobs
     {
         #region Const
@@ -105,13 +126,46 @@ namespace PrintWindowsService
             }
         }
 
+        [InstrumentationClass(InstrumentationType.Event)]
+        public class wmiEvent
+        {
+            private string message;
+            private EventLogEntryType eventType;
+            private DateTime eventTime;
+            // Определяем свойства
+            public string Message
+            {
+                get { return message; }
+            }
+            public string EventTypeName
+            {
+                get { return eventType.ToString(); }
+            }
+            public DateTime EventTime
+            {
+                get { return eventTime; }
+            }
+            public wmiEvent(EventLog cEventLog, string cMessage, EventLogEntryType cEventType)
+            {
+                message = cMessage;
+                eventType = cEventType;
+                eventTime = DateTime.Now;
+                if (cEventLog != null)
+                {
+                    cEventLog.WriteEntry(cMessage, cEventType);
+                }
+            }
+        }
+
         #endregion
 
         int pingTimeoutInSeconds;
         Excel.Application xl = null;
         System.Globalization.CultureInfo oldCI, newCI;
         string tmpExcelFile;
+        string dbConnectionString;
         DataTable tableLabelProperty;
+        ProductInfo wmiProductInfo;
 
         public bool JobStarted
         {
@@ -130,12 +184,24 @@ namespace PrintWindowsService
             // Set up a timer to trigger every print task frequency.
             int printTaskFrequencyInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPrintTaskFrequencyName]);
             pingTimeoutInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPingTimeoutName]);
+            dbConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings[cConnectionStringName].ConnectionString;
             m_PrintTimer = new System.Timers.Timer();
             m_PrintTimer.Interval = printTaskFrequencyInSeconds * 1000; // seconds to milliseconds
             m_PrintTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.OnPrintTimer);
             tmpExcelFile = Path.GetTempPath() + "Label.xls"; //Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\Label.xls";
-            //vpEventLog.WriteEntry(string.Format("File - {0}", tmpExcelFile));
-            vpEventLog.WriteEntry(string.Format("Print Task Frequncy = {0}", printTaskFrequencyInSeconds));
+
+            wmiProductInfo = new ProductInfo();
+            wmiProductInfo.ComputerName = Environment.MachineName;
+            wmiProductInfo.Name = "Сервис печати этикеток";
+            wmiProductInfo.Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            wmiProductInfo.StartTime = DateTime.Now;
+            wmiProductInfo.printTaskFrequencyInSeconds = printTaskFrequencyInSeconds;
+            wmiProductInfo.pingTimeoutInSeconds = pingTimeoutInSeconds;
+            wmiProductInfo.DBConnectionString = dbConnectionString;
+            Instrumentation.Publish(wmiProductInfo);
+
+            wmiEvent PGwmiEvent = new wmiEvent(vpEventLog, string.Format("Print Task Frequncy = {0}", printTaskFrequencyInSeconds), EventLogEntryType.Information);
+            Instrumentation.Fire(PGwmiEvent);
         }
 
         #endregion
@@ -164,6 +230,7 @@ namespace PrintWindowsService
             {
                 xl = new Excel.Application();// Если нет, то создаём новое приложение
             }*/
+            wmiEvent PGwmiEvent;
             try
             {
                 if (xl == null)
@@ -183,14 +250,17 @@ namespace PrintWindowsService
             }
             catch (Exception ex)
             {
-                vpEventLog.WriteEntry("Error of Excel start: " + ex.ToString(), EventLogEntryType.Error);
+                PGwmiEvent = new wmiEvent(vpEventLog, "Error of Excel start: " + ex.ToString(), EventLogEntryType.Error);
+                Instrumentation.Fire(PGwmiEvent);
             }
 
-            vpEventLog.WriteEntry("Starting print service...");
+            PGwmiEvent = new wmiEvent(vpEventLog, "Starting print service...", EventLogEntryType.Information);
+            Instrumentation.Fire(PGwmiEvent);
 
             m_PrintTimer.Start();
 
-            vpEventLog.WriteEntry("Print service has been started");
+            PGwmiEvent = new wmiEvent(vpEventLog, "Print service has been started", EventLogEntryType.Information);
+            Instrumentation.Fire(PGwmiEvent);
             fJobStarted = true;
         }
 
@@ -210,20 +280,23 @@ namespace PrintWindowsService
                 //GC.GetTotalMemory(true);
             }
 
-            vpEventLog.WriteEntry("Stopping print service...");
+            wmiEvent PGwmiEvent = new wmiEvent(vpEventLog, "Stopping print service...", EventLogEntryType.Information);
+            Instrumentation.Fire(PGwmiEvent);
 
             //stop timers if working
             if (m_PrintTimer.Enabled)
                 m_PrintTimer.Stop();
 
-            vpEventLog.WriteEntry("Print service has been stopped");
+            PGwmiEvent = new wmiEvent(vpEventLog, "Print service has been stopped", EventLogEntryType.Information);
+            Instrumentation.Fire(PGwmiEvent);
             fJobStarted = false;
         }
 
         public void OnPrintTimer(object sender, System.Timers.ElapsedEventArgs args)
         {
             // TODO: Insert print logic here.
-            vpEventLog.WriteEntry("Monitoring the print activity.", EventLogEntryType.Information);
+            wmiEvent PGwmiEvent = new wmiEvent(vpEventLog, "Monitoring the print activity", EventLogEntryType.Information);
+            Instrumentation.Fire(PGwmiEvent);
             m_PrintTimer.Stop();
             int RequestCount = 0;
 
@@ -251,7 +324,7 @@ namespace PrintWindowsService
                 xl.UserControl = false;
             }
 
-            SqlConnection dbConnection = new SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings[cConnectionStringName].ConnectionString);
+            SqlConnection dbConnection = new SqlConnection(dbConnectionString);
             //SqlTransaction dbTransactionRead;
 
             try
@@ -377,11 +450,13 @@ namespace PrintWindowsService
                             {
                                 printState = "Failed";
                             }
-                            vpEventLog.WriteEntry(String.Format("ProductionResponseID: {0}. Print to: {1}. Status: {2}", dbReaderProdResponse["ID"], ToPrinterName, printState), printState == "Failed"? EventLogEntryType.FailureAudit : EventLogEntryType.SuccessAudit);
+                            PGwmiEvent = new wmiEvent(vpEventLog, String.Format("ProductionResponseID: {0}. Print to: {1}. Status: {2}", dbReaderProdResponse["ID"], ToPrinterName, printState), printState == "Failed"? EventLogEntryType.FailureAudit : EventLogEntryType.SuccessAudit);
+                            Instrumentation.Fire(PGwmiEvent);
                         }
                         else
                         {
-                            vpEventLog.WriteEntry("Excel template is empty", EventLogEntryType.Error);
+                            PGwmiEvent = new wmiEvent(vpEventLog, "Excel template is empty", EventLogEntryType.Error);
+                            Instrumentation.Fire(PGwmiEvent);
                             printState = "Failed";
                         }
 
@@ -398,13 +473,15 @@ namespace PrintWindowsService
             }
             catch (Exception ex)
             {
-                vpEventLog.WriteEntry("Get data from DB. Error: " + ex.ToString(), EventLogEntryType.Error);
+                PGwmiEvent = new wmiEvent(vpEventLog, "Get data from DB. Error: " + ex.ToString(), EventLogEntryType.Error);
+                Instrumentation.Fire(PGwmiEvent);
             }
             finally
             {
                 dbConnection.Close();
             }
-            vpEventLog.WriteEntry(string.Format("Print is done. {0} tasks", RequestCount));
+            PGwmiEvent = new wmiEvent(vpEventLog, string.Format("Print is done. {0} tasks", RequestCount), EventLogEntryType.Information);
+            Instrumentation.Fire(PGwmiEvent);
             //временно
             //xl.Quit();
             //System.Threading.Thread.CurrentThread.CurrentCulture = oldCI;
@@ -471,6 +548,7 @@ namespace PrintWindowsService
         //печать области на заданный принтер
         public bool PrintRange(string toPrinterName, string IpAdress, string printQuantity)
         {
+            wmiEvent PGwmiEvent;
             //перед печатью если задан IP сделать пинг
             if ((pingTimeoutInSeconds > 0) & (IpAdress != ""))
             {
@@ -478,7 +556,8 @@ namespace PrintWindowsService
                 System.Net.NetworkInformation.PingReply printerReply = printerPing.Send(IpAdress, pingTimeoutInSeconds);
                 if (printerReply.Status != System.Net.NetworkInformation.IPStatus.Success)
                 {
-                    vpEventLog.WriteEntry(string.Format("Printer {0}  {1}  ping timeout status {2}", toPrinterName, IpAdress, printerReply.Status), EventLogEntryType.Warning);
+                    PGwmiEvent = new wmiEvent(vpEventLog, string.Format("Printer {0}  {1}  ping timeout status {2}", toPrinterName, IpAdress, printerReply.Status), EventLogEntryType.Warning);
+                    Instrumentation.Fire(PGwmiEvent);
                     return false;
                 }
             }
@@ -515,7 +594,8 @@ namespace PrintWindowsService
             }
             catch (Exception ex)
             {
-                vpEventLog.WriteEntry("Can not open file. Error: " + ex.ToString(), EventLogEntryType.Error);
+                PGwmiEvent = new wmiEvent(vpEventLog, "Can not open file. Error: " + ex.ToString(), EventLogEntryType.Error);
+                Instrumentation.Fire(PGwmiEvent);
                 return false;
             }
 
@@ -540,7 +620,8 @@ namespace PrintWindowsService
             }
             catch (Exception ex)
             {
-                vpEventLog.WriteEntry("Parameters sheet is not found. Error: " + ex.ToString(), EventLogEntryType.Warning);
+                PGwmiEvent = new wmiEvent(vpEventLog, "Parameters sheet is not found. Error: " + ex.ToString(), EventLogEntryType.Warning);
+                Instrumentation.Fire(PGwmiEvent);
             }
 
             /* установка значений свойств для этикетки
@@ -628,7 +709,8 @@ namespace PrintWindowsService
             System.Threading.Thread.CurrentThread.CurrentCulture = oldCI;*/
             catch (Exception ex)
             {
-                vpEventLog.WriteEntry("Print еrror: " + ex.ToString(), EventLogEntryType.Error);
+                PGwmiEvent = new wmiEvent(vpEventLog, "Print еrror: " + ex.ToString(), EventLogEntryType.Error);
+                Instrumentation.Fire(PGwmiEvent);
             }
             finally
             {

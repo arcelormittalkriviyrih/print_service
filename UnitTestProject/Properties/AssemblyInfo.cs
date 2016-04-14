@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("UnitTestProject")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("VIMAS Technologies")]
 [assembly: AssemblyProduct("UnitTestProject")]
-[assembly: AssemblyCopyright("Copyright ©  2016")]
+[assembly: AssemblyCopyright("Авторское право принадлежит компании ВИМАС Технологии (Copyright © 2016, VIMAS Technologies,  All rights reserved.)")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

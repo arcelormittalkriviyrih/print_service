@@ -16,7 +16,9 @@ namespace PrintWindowsService
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new frmMain());
+            frmMain f = new frmMain();
+            f.Hide();
+            Application.Run();
         }
     }
 }

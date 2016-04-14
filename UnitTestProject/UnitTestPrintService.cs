@@ -90,7 +90,7 @@ namespace PrintWindowsService.Tests
 
 
 
-            //PrintJobs pJobTest = new PrintJobs();
+            PrintJobs pJobTest = new PrintJobs();
 
             //pJobTest.StartJob();
             //pJobTest.StopJob();

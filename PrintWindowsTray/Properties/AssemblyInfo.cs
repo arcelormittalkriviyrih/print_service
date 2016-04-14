@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("PrintWindowsService")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Vimas Technologies")]
 [assembly: AssemblyProduct("PrintWindowsService")]
-[assembly: AssemblyCopyright("Copyright ©  2016")]
+[assembly: AssemblyCopyright("Авторское право принадлежит компании ВИМАС Технологии (Copyright © 2016, VIMAS Technologies,  All rights reserved.)")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
