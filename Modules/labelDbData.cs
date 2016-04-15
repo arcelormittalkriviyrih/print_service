@@ -18,10 +18,8 @@ namespace PrintWindowsService
             dbConnection = new SqlConnection(connectionString);
             selectCommandProdResponse = new SqlCommand("SELECT ID, ResponseState, ProductionRequestID, EquipmentID, EquipmentClassID, ProductSegmentID, ProcessSegmentID\n" +
                   "FROM v_ProductionResponse\n" +
-                  "WHERE (ResponseState = @State)\n" +
-                  "  AND (EquipmentClassID = @EquipmentClassID)", dbConnection);
-            selectCommandProdResponse.Parameters.AddWithValue("@State", "ToPrint");
-            selectCommandProdResponse.Parameters.AddWithValue("@EquipmentClassID", "/2/");
+                  "WHERE (ResponseState = @State)", dbConnection);
+            selectCommandProdResponse.Parameters.AddWithValue("@State", "ToPrint");            
 
             selectLabelProperty = new SqlCommand("SELECT TypeProperty, ClassPropertyID, ValueProperty\n" +
                   "FROM v_PrintProperties\n" +
