@@ -18,6 +18,9 @@ using System.Reflection;
 
 namespace PrintWindowsService
 {
+    /// <summary>
+    /// Class for the management of processing of input queue on printing of labels
+    /// </summary>
     public class PrintJobs
     {
         #region Const
@@ -44,7 +47,7 @@ namespace PrintWindowsService
         private const string cPingTimeoutName = "PingTimeout";
 
         /// <summary>
-        /// The name of the configuration parameter for the print task frequency in seconds.
+        /// The name of the configuration parameter for the DB connection string.
         /// </summary>
         private const string cConnectionStringName = "DBDataSource";
 
@@ -56,6 +59,7 @@ namespace PrintWindowsService
         /// Time interval for checking print tasks
         /// </summary>
         private System.Timers.Timer m_PrintTimer;
+        private ProductInfo wmiProductInfo;
         private bool fJobStarted = false;
         private string dbConnectionString;
         #endregion
@@ -105,7 +109,9 @@ namespace PrintWindowsService
         }
 
         #endregion
-
+        /// <summary>
+        /// Status of processing of queue
+        /// </summary>
         public bool JobStarted
         {
             get
@@ -125,6 +131,14 @@ namespace PrintWindowsService
             printLabel.pingTimeoutInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPingTimeoutName]);
             printLabel.templateFile = Path.GetTempPath() + "Label.xls";;
 
+            wmiProductInfo = new ProductInfo(cServiceTitle,
+                                             Environment.MachineName,
+                                             Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                                             DateTime.Now,
+                                             printTaskFrequencyInSeconds,
+                                             printLabel.pingTimeoutInSeconds,
+                                             dbConnectionString);
+
             if (printLabel.xl == null)
             {
                 try
@@ -133,21 +147,16 @@ namespace PrintWindowsService
                 }
                 catch (Exception ex)
                 {
-                    senderMonitorEvent.sendMonitorEvent(vpEventLog, "Error of Excel start: " + ex.ToString(), EventLogEntryType.Error);
+                    string lLastError = "Error of Excel start: " + ex.ToString();
+                    senderMonitorEvent.sendMonitorEvent(vpEventLog, lLastError, EventLogEntryType.Error);
+                    wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                    wmiProductInfo.PublishInfo();
                 }
             }
 
             m_PrintTimer = new System.Timers.Timer();
             m_PrintTimer.Interval = printTaskFrequencyInSeconds * 1000; // seconds to milliseconds
             m_PrintTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.OnPrintTimer);
-
-            ProductInfo wmiProductInfo = new ProductInfo(Environment.MachineName,
-                                                         cServiceTitle,
-                                                         Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                                                         DateTime.Now,
-                                                         printTaskFrequencyInSeconds,
-                                                         printLabel.pingTimeoutInSeconds,
-                                                         dbConnectionString);
 
             senderMonitorEvent.sendMonitorEvent(vpEventLog, string.Format("Print Task Frequncy = {0}", printTaskFrequencyInSeconds), EventLogEntryType.Information);
         }
@@ -168,6 +177,9 @@ namespace PrintWindowsService
 
         #region Methods
 
+        /// <summary>
+        /// Start of processing of input queue
+        /// </summary>
         public void StartJob()
         {
             if (printLabel.xl == null)
@@ -178,7 +190,10 @@ namespace PrintWindowsService
                 }
                 catch (Exception ex)
                 {
-                    senderMonitorEvent.sendMonitorEvent(vpEventLog, "Error of Excel start: " + ex.ToString(), EventLogEntryType.Error);
+                    string lLastError = "Error of Excel start: " + ex.ToString();
+                    senderMonitorEvent.sendMonitorEvent(vpEventLog, lLastError, EventLogEntryType.Error);
+                    wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                    wmiProductInfo.PublishInfo();
                 }
             }
 
@@ -190,6 +205,9 @@ namespace PrintWindowsService
             fJobStarted = true;
         }
 
+        /// <summary>
+        /// Stop of processing of input queue
+        /// </summary>
         public void StopJob()
         {
             senderMonitorEvent.sendMonitorEvent(vpEventLog, "Stopping print service...", EventLogEntryType.Information);
@@ -202,6 +220,9 @@ namespace PrintWindowsService
             fJobStarted = false;
         }
 
+        /// <summary>
+        /// Processing of input queue
+        /// </summary>
         public void OnPrintTimer(object sender, System.Timers.ElapsedEventArgs args)
         {
             senderMonitorEvent.sendMonitorEvent(vpEventLog, "Monitoring the print activity", EventLogEntryType.Information);
@@ -215,6 +236,7 @@ namespace PrintWindowsService
             }
             //временно для тестирования
 
+            string lLastError = "";
             List<jobProps> JobData = new List<jobProps>();
             try
             {
@@ -230,17 +252,25 @@ namespace PrintWindowsService
                         if (printLabel.printTemplate(job))
                         {
                             printState = "Printed";
+                            wmiProductInfo.LastActivityTime = DateTime.Now;
                         }
                         else
                         {
                             printState = "Failed";
                         }
-                        senderMonitorEvent.sendMonitorEvent(vpEventLog, String.Format("ProductionResponseID: {0}. Print to: {1}. Status: {2}", job.ProductionResponseID, job.PrinterName, printState), printState == "Failed" ? EventLogEntryType.FailureAudit : EventLogEntryType.SuccessAudit);
+                        lLastError = String.Format("ProductionResponseID: {0}. Print to: {1}. Status: {2}", job.ProductionResponseID, job.PrinterName, printState);
+                        senderMonitorEvent.sendMonitorEvent(vpEventLog, lLastError, printState == "Failed" ? EventLogEntryType.FailureAudit : EventLogEntryType.SuccessAudit);
+                        if (printState == "Failed")
+                        {
+                            wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                        }
                     }
                     else
                     {
                         printState = "Failed";
-                        senderMonitorEvent.sendMonitorEvent(vpEventLog, "Excel template is empty", EventLogEntryType.Error);
+                        lLastError = "Excel template is empty";
+                        senderMonitorEvent.sendMonitorEvent(vpEventLog, lLastError, EventLogEntryType.Error);
+                        wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                     }
 
                     lDbData.updateJobStatus(job.ProductionResponseID, printState);
@@ -248,8 +278,12 @@ namespace PrintWindowsService
             }
             catch (Exception ex)
             {
-                senderMonitorEvent.sendMonitorEvent(vpEventLog, "Get data from DB. Error: " + ex.ToString(), EventLogEntryType.Error);
+                lLastError = "Get data from DB. Error: " + ex.ToString();
+                senderMonitorEvent.sendMonitorEvent(vpEventLog, lLastError, EventLogEntryType.Error);
+                wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
             }
+            wmiProductInfo.PrintedLabelsCount += JobData.Count;
+            wmiProductInfo.PublishInfo();
             senderMonitorEvent.sendMonitorEvent(vpEventLog, string.Format("Print is done. {0} tasks", JobData.Count), EventLogEntryType.Information);
 
             m_PrintTimer.Start();

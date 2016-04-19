@@ -4,6 +4,9 @@ using System.IO;
 
 namespace PrintWindowsService
 {
+    /// <summary>
+    /// Class of label for print
+    /// </summary>
     public class jobProps
     {
         private int productionResponseID;
@@ -13,22 +16,37 @@ namespace PrintWindowsService
         private byte[] xlFile;
         private DataTable tableLabelProperty;
 
+        /// <summary>
+        /// Production response ID
+        /// </summary>
         public int ProductionResponseID
         {
             get { return productionResponseID; }
         }
+        /// <summary>
+        /// Printer for print label
+        /// </summary>
         public string PrinterName
         {
             get { return printerName; }
         }
+        /// <summary>
+        /// IP of printer
+        /// </summary>
         public string IpAddress
         {
             get { return ipAddress; }
         }
+        /// <summary>
+        /// Quantity parameter of label
+        /// </summary>
         public string PrintQuantity
         {
             get { return printQuantity; }
         }
+        /// <summary>
+        /// Is exists template of label
+        /// </summary>
         public bool isExistsTemplate
         {
             get { return xlFile.Length > 0; }
@@ -44,7 +62,9 @@ namespace PrintWindowsService
             ipAddress = getLabelParamater("EquipmentProperty", "3");
             printQuantity = getLabelParamater("Weight", "0");
         }
-
+        /// <summary>
+        /// Prepare template for print
+        /// </summary>
         public void prepareTemplate()
         {
             if (xlFile.Length > 0)
@@ -56,7 +76,9 @@ namespace PrintWindowsService
                 }
             }
         }
-
+        /// <summary>
+        /// Return parameter value by TypeProperty and ClassPropertyID
+        /// </summary>
         public string getLabelParamater(string aTypeProperty, string aClassPropertyID)
         {
             string ParamValue = "";

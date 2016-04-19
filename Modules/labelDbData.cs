@@ -5,6 +5,9 @@ using System.Collections.Generic;
 
 namespace PrintWindowsService
 {
+    /// <summary>
+    /// Class for processing of input queue and generation of list of labels for printing
+    /// </summary>
     public class labelDbData
     {
         private SqlConnection dbConnection;
@@ -51,6 +54,9 @@ namespace PrintWindowsService
             dbConnection.Dispose();
         }
 
+        /// <summary>
+        /// Processing of input queue and generation of list of labels for printing
+        /// </summary>
         public void fillJobData(ref List<jobProps> resultData)
         {
             //List<jobProps> resultData = new List<jobProps>();
@@ -95,6 +101,9 @@ namespace PrintWindowsService
             //return resultData;
         }
 
+        /// <summary>
+        /// Update status of label print
+        /// </summary>
         public void updateJobStatus(int aProductionResponseID, string aPrintState)
         {
             try

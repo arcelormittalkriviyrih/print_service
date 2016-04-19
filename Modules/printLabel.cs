@@ -5,6 +5,9 @@ using Excel = Microsoft.Office.Interop.Excel;
 
 namespace PrintWindowsService
 {
+    /// <summary>
+    /// Class for initialising of parameters label and printing of the set label
+    /// </summary>
     public static class printLabel
     {
         public static int pingTimeoutInSeconds;
@@ -12,7 +15,9 @@ namespace PrintWindowsService
         public static ExcelApplication xl;
         public static string templateFile;
 
-        //печать области на заданный принтер
+        /// <summary>
+        /// Printing of the prepared label
+        /// </summary>
         public static bool printTemplate(jobProps aJobProps)
         {
             //перед печатью если задан IP сделать пинг
@@ -30,7 +35,7 @@ namespace PrintWindowsService
             System.Threading.Thread.CurrentThread.CurrentCulture = xl.currentCI;
             try
             {
-                xl.excelApp.Workbooks.Add(templateFile);//@"D:\template.xls");
+                xl.OpenTemplate(templateFile);//@"D:\template.xls");
             }
             catch (Exception ex)
             {
@@ -38,16 +43,14 @@ namespace PrintWindowsService
                 return false;
             }
 
-            Excel.Worksheet WsFirst = (Excel.Worksheet)xl.excelApp.ActiveWorkbook.ActiveSheet; // get_Item(1); //(Excel.Worksheet)lWb.ActiveSheet; //
+            //Excel.Worksheet WsFirst = (Excel.Worksheet)xl.excelApp.ActiveWorkbook.ActiveSheet; // get_Item(1); //(Excel.Worksheet)lWb.ActiveSheet; //
 
-            Excel.Range FindParamValue;
-            Excel.Worksheet WsParams;
             Boolean boolPrintLabel = false;
             try
             {
-                //количество всегда на второй закладке в ячейке A2
-                WsParams = (Excel.Worksheet)xl.excelApp.Sheets.get_Item(2);
-                FindParamValue = (Excel.Range)WsParams.Cells[1, 3];
+                //количество всегда на второй закладке в ячейке C1
+                Excel.Worksheet WsParams = xl.GetParamsSheet();
+                Excel.Range FindParamValue = (Excel.Range)WsParams.Cells[1, 3];
                 FindParamValue.Value = aJobProps.PrintQuantity;
 
                 int iRow = 2;
@@ -56,6 +59,9 @@ namespace PrintWindowsService
                     ((Excel.Range)WsParams.Cells[iRow, 3]).Value = aJobProps.getLabelParamater(((Excel.Range)WsParams.Cells[iRow, 1]).Value.ToString(), ((Excel.Range)WsParams.Cells[iRow, 2]).Value.ToString());
                     iRow++;
                 }
+
+                WsParams = null;
+                FindParamValue = null;
             }
             catch (Exception ex)
             {
@@ -65,20 +71,7 @@ namespace PrintWindowsService
             try
             {
                 //myPrinters.SetDefaultPrinter(toPrinterName);
-                xl.excelApp.PrintCommunication = false;
-                WsFirst.PageSetup.Orientation = Excel.XlPageOrientation.xlLandscape;
-                WsFirst.PageSetup.CenterHorizontally = false;
-                WsFirst.PageSetup.CenterVertically = false;
-                WsFirst.PageSetup.LeftMargin = 0;
-                WsFirst.PageSetup.RightMargin = 0;
-                WsFirst.PageSetup.TopMargin = 0;
-                WsFirst.PageSetup.BottomMargin = 0;
-                WsFirst.PageSetup.HeaderMargin = 0;
-                WsFirst.PageSetup.FooterMargin = 0;
-                WsFirst.PageSetup.FitToPagesWide = 1;
-                WsFirst.PageSetup.ScaleWithDocHeaderFooter = true;
-                xl.excelApp.PrintCommunication = true;
-                WsFirst.PrintOutEx(1, 1, 1, Type.Missing, aJobProps.PrinterName);
+                xl.PrintLabelSheet(aJobProps.PrinterName);
                 boolPrintLabel = true;
             }
 
@@ -88,13 +81,7 @@ namespace PrintWindowsService
             }
             finally
             {
-                if (xl.excelApp.Workbooks.Count > 0)
-                {
-                    xl.excelApp.ActiveWorkbook.Close(false);
-                }
-                WsFirst = null;
-                WsParams = null;
-                FindParamValue = null;
+                xl.CloseTemplate();
             }
 
             return boolPrintLabel;
