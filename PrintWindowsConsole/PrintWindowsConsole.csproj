@@ -53,25 +53,29 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\Json\Bin\Net35\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Management" />
     <Reference Include="System.Management.Instrumentation" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\ModulesWS\jobPropsWS.cs">
+      <Link>jobPropsWS.cs</Link>
+    </Compile>
+    <Compile Include="..\ModulesWS\ServicedbData.cs">
+      <Link>ServicedbData.cs</Link>
+    </Compile>
     <Compile Include="..\Modules\excelApp.cs">
       <Link>excelApp.cs</Link>
-    </Compile>
-    <Compile Include="..\Modules\jobProps.cs">
-      <Link>jobProps.cs</Link>
-    </Compile>
-    <Compile Include="..\Modules\labelDbData.cs">
-      <Link>labelDbData.cs</Link>
     </Compile>
     <Compile Include="..\Modules\PrintJobs.cs">
       <Link>PrintJobs.cs</Link>

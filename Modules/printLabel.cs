@@ -18,7 +18,7 @@ namespace PrintWindowsService
         /// <summary>
         /// Printing of the prepared label
         /// </summary>
-        public static bool printTemplate(jobProps aJobProps)
+        public static bool printTemplate(jobPropsWS aJobProps)
         {
             //перед печатью если задан IP сделать пинг
             if ((pingTimeoutInSeconds > 0) & (aJobProps.IpAddress != ""))
@@ -56,7 +56,7 @@ namespace PrintWindowsService
                 int iRow = 2;
                 while (((Excel.Range)WsParams.Cells[iRow, 1]).Value != null)
                 {
-                    ((Excel.Range)WsParams.Cells[iRow, 3]).Value = aJobProps.getLabelParamater(((Excel.Range)WsParams.Cells[iRow, 1]).Value.ToString(), ((Excel.Range)WsParams.Cells[iRow, 2]).Value.ToString());
+                    ((Excel.Range)WsParams.Cells[iRow, 3]).Value = aJobProps.getLabelParamater(((Excel.Range)WsParams.Cells[iRow, 1]).Value.ToString(), int.Parse(((Excel.Range)WsParams.Cells[iRow, 2]).Value.ToString()));
                     iRow++;
                 }
 

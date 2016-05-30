@@ -46,10 +46,15 @@ namespace PrintWindowsService
         /// </summary>
         private const string cPingTimeoutName = "PingTimeout";
 
+        /*        /// <summary>
+                /// The name of the configuration parameter for the DB connection string.
+                /// </summary>
+                private const string cConnectionStringName = "DBDataSource";*/
+
         /// <summary>
-        /// The name of the configuration parameter for the DB connection string.
+        /// The name of the configuration parameter for the Odata service url.
         /// </summary>
-        private const string cConnectionStringName = "DBDataSource";
+        private const string cOdataService = "OdataServiceUri";
 
         #endregion
 
@@ -59,9 +64,11 @@ namespace PrintWindowsService
         /// Time interval for checking print tasks
         /// </summary>
         private System.Timers.Timer m_PrintTimer;
+
         private ProductInfo wmiProductInfo;
         private bool fJobStarted = false;
-        private string dbConnectionString;
+        //private string dbConnectionString;
+        private string OdataServiceUrl;
         #endregion
 
         #region vpEventLog
@@ -126,7 +133,8 @@ namespace PrintWindowsService
         {
             // Set up a timer to trigger every print task frequency.
             int printTaskFrequencyInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPrintTaskFrequencyName]);
-            dbConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings[cConnectionStringName].ConnectionString;
+            //dbConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings[cConnectionStringName].ConnectionString;
+            OdataServiceUrl = System.Configuration.ConfigurationManager.AppSettings[cOdataService];
 
             printLabel.pingTimeoutInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPingTimeoutName]);
             printLabel.templateFile = Path.GetTempPath() + "Label.xls";;
@@ -137,7 +145,7 @@ namespace PrintWindowsService
                                              DateTime.Now,
                                              printTaskFrequencyInSeconds,
                                              printLabel.pingTimeoutInSeconds,
-                                             dbConnectionString);
+                                             OdataServiceUrl);
 
             if (printLabel.xl == null)
             {
@@ -237,14 +245,15 @@ namespace PrintWindowsService
             //временно для тестирования
 
             string lLastError = "";
-            List<jobProps> JobData = new List<jobProps>();
+            List<jobPropsWS> JobData = new List<jobPropsWS>();
             try
             {
                 string printState;
-                labelDbData lDbData = new labelDbData(dbConnectionString);
+                //labelDbData lDbData = new labelDbData(dbConnectionString);
+                ServicedbData lDbData = new ServicedbData(OdataServiceUrl);
                 lDbData.fillJobData(ref JobData);
 
-                foreach (jobProps job in JobData)
+                foreach (jobPropsWS job in JobData)
                 {
                     if (job.isExistsTemplate)
                     {

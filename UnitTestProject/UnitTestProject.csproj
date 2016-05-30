@@ -63,13 +63,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PrintWindowsService\PrintWindowsService.csproj">
-      <Project>{5B2B9B73-E804-4AE5-B951-F4595AA2099C}</Project>
-      <Name>PrintWindowsService</Name>
-    </ProjectReference>
+    <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <ProjectReference Include="..\PrintWindowsConsole\PrintWindowsConsole.csproj">
+      <Project>{a80f067a-6843-4c5a-9fef-e9651d5fb90e}</Project>
+      <Name>PrintWindowsConsole</Name>
+    </ProjectReference>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

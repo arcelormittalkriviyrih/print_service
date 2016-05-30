@@ -1,8 +1,8 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PrintWindowsService;
-
 using System.Linq;
+using System.Collections.Generic;
 
 //using DocumentFormat.OpenXml;
 //using DocumentFormat.OpenXml.Packaging;
@@ -91,8 +91,13 @@ namespace PrintWindowsService.Tests
 
 
             PrintJobs pJobTest = new PrintJobs();
+            pJobTest.OnPrintTimer(this, new EventArgs() as System.Timers.ElapsedEventArgs);
 
-            //pJobTest.StartJob();
+            /*List<jobPropsWS> JobData = new List<jobPropsWS>();
+            ServicedbData lDbData = new ServicedbData("http://mssql2014srv/odata_unified_svc/api/Dynamic/");
+            lDbData.fillJobData(ref JobData);*/
+
+            pJobTest.StartJob();
             //pJobTest.StopJob();
             //pJobTest.OnPrintTimer(this, new EventArgs() as System.Timers.ElapsedEventArgs);
             //printService.PrintRange("TSC TTP-268M", "192.168.100.246");//"TSC TTP-268M");//ExportRangeAsBmp(); //PrintBmp();//
