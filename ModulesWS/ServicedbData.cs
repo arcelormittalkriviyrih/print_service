@@ -98,7 +98,10 @@ namespace PrintWindowsService
         {
             string responseText = "";
             HttpWebRequest request = WebRequest.Create(requestUrl) as HttpWebRequest;
+            request.Credentials = CredentialCache.DefaultNetworkCredentials; 
+#if (DEBUG)
             request.Credentials = new NetworkCredential("atokar", "qcAL0ZEV", "ask-ad");
+#endif
             using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
             {
                 if (response.StatusCode != HttpStatusCode.OK)
@@ -138,8 +141,8 @@ namespace PrintWindowsService
                 string PropertiesResponse = MakeRequest(PropertiesUrl);
                 List<PrintPropertiesValue> PrintPropertiesObj = DeserializePrintProperties(PropertiesResponse);
 
-                string TemplateUrl = CreateRequest(String.Format("v_ProductionParameter_Files?$filter=ProductSegmentID%20eq%20{0}%20and%20ProcessSegmentID%20eq%20{1}%20and%20Value%20eq%20%27TMPL%27&$select=Data",
-                                                                 prValue.ProductSegmentID == null ? 0 : prValue.ProductSegmentID, prValue.ProcessSegmentID == null ? 0 : prValue.ProcessSegmentID));
+                string TemplateUrl = CreateRequest(String.Format("v_ProductionParameter_Files?$filter=ProductSegmentID%20eq%20{0}%20and%20ProcessSegmentID%20eq%20{1}%20and%20Value%20eq%20%27{2}%27&$select=Data",
+                                                                 prValue.ProductSegmentID == null ? 0 : prValue.ProductSegmentID, prValue.ProcessSegmentID == null ? 0 : prValue.ProcessSegmentID, "TEMPLATE"));
                 string TemplateResponse = MakeRequest(TemplateUrl);
                 List<LabelTemplateValue> LabelTemplateObj = DeserializeLabelTemplate(TemplateResponse);
                 if (LabelTemplateObj.Count > 0)
@@ -165,7 +168,10 @@ namespace PrintWindowsService
             request.Method = "PATCH";
             request.ContentLength = body.Length;
             request.ContentType = "application/json";
+            request.Credentials = CredentialCache.DefaultNetworkCredentials;
+#if (DEBUG)
             request.Credentials = new NetworkCredential("atokar", "qcAL0ZEV", "ask-ad");
+#endif
 
             using (Stream stream = request.GetRequestStream())
             {

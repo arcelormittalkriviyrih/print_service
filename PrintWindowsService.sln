@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintWindowsTray", "PrintWi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintWindowsConsole", "PrintWindowsConsole\PrintWindowsConsole.csproj", "{A80F067A-6843-4C5A-9FEF-E9651D5FB90E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintLabelService", "PrintLabelService\PrintLabelService.csproj", "{10B5711D-4629-443B-850D-F5EC1A575680}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,12 +38,16 @@ Global
 		{A80F067A-6843-4C5A-9FEF-E9651D5FB90E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A80F067A-6843-4C5A-9FEF-E9651D5FB90E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A80F067A-6843-4C5A-9FEF-E9651D5FB90E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10B5711D-4629-443B-850D-F5EC1A575680}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10B5711D-4629-443B-850D-F5EC1A575680}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10B5711D-4629-443B-850D-F5EC1A575680}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10B5711D-4629-443B-850D-F5EC1A575680}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 5
+		SccNumberOfProjects = 6
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = http://109.95.53.22:33362/tfs/bulkteq
 		SccLocalPath0 = .
@@ -57,5 +63,8 @@ Global
 		SccProjectUniqueName4 = PrintWindowsConsole\\PrintWindowsConsole.csproj
 		SccProjectName4 = PrintWindowsConsole
 		SccLocalPath4 = PrintWindowsConsole
+		SccProjectUniqueName5 = PrintLabelService\\PrintLabelService.csproj
+		SccProjectName5 = PrintLabelService
+		SccLocalPath5 = PrintLabelService
 	EndGlobalSection
 EndGlobal

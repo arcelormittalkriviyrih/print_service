@@ -89,12 +89,6 @@ namespace PrintWindowsService
             {
                 ParamValue = propertyFind.ValueProperty;
             }
-            /*DataRow[] foundRows;
-            foundRows = tableLabelProperty. Select("TypeProperty = '" + aTypeProperty + "' AND ClassPropertyID = " + aClassPropertyID);
-            if (foundRows.Length > 0)
-            {
-                ParamValue = foundRows[0]["ValueProperty"].ToString();
-            }*/
 
             return ParamValue;
         }

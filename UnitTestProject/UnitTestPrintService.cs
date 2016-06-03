@@ -88,8 +88,6 @@ namespace PrintWindowsService.Tests
             sr1.ToImage(0, "d:\\123.bmp");
             */
 
-
-
             PrintJobs pJobTest = new PrintJobs();
             pJobTest.OnPrintTimer(this, new EventArgs() as System.Timers.ElapsedEventArgs);
 
@@ -97,7 +95,7 @@ namespace PrintWindowsService.Tests
             ServicedbData lDbData = new ServicedbData("http://mssql2014srv/odata_unified_svc/api/Dynamic/");
             lDbData.fillJobData(ref JobData);*/
 
-            pJobTest.StartJob();
+            //pJobTest.StartJob();
             //pJobTest.StopJob();
             //pJobTest.OnPrintTimer(this, new EventArgs() as System.Timers.ElapsedEventArgs);
             //printService.PrintRange("TSC TTP-268M", "192.168.100.246");//"TSC TTP-268M");//ExportRangeAsBmp(); //PrintBmp();//

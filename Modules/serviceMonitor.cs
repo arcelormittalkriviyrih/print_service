@@ -18,7 +18,8 @@ namespace PrintWindowsService
         private DateTime prStartTime;
         private int prPrintTaskFrequencyInSeconds;
         private int prPingTimeoutInSeconds;
-        private string prDBConnectionString;
+        //private string prDBConnectionString;
+        private string prOdataServiceUrl;
         private DateTime prLastActivityTime;
         private string prLastServiceError;
         private int prPrintedLabelsCount;
@@ -68,9 +69,9 @@ namespace PrintWindowsService
         /// <summary>
         /// DB connection string
         /// </summary>
-        public string DBConnectionString
+        public string OdataServiceUrl
         {
-            get { return prDBConnectionString; }
+            get { return prOdataServiceUrl; }
         }
         /// <summary>
         /// Time from the moment of start
@@ -110,7 +111,7 @@ namespace PrintWindowsService
                            DateTime cStartTime,
                            int cPrintTaskFrequencyInSeconds,
                            int cPingTimeoutInSeconds,
-                           string cDBConnectionString)
+                           string cOdataServiceUrl)
         {
             prAppName = cAppName;
             prComputerName = cComputerName;
@@ -118,7 +119,7 @@ namespace PrintWindowsService
             prStartTime = cStartTime;
             prPrintTaskFrequencyInSeconds = cPrintTaskFrequencyInSeconds;
             prPingTimeoutInSeconds = cPingTimeoutInSeconds;
-            prDBConnectionString = cDBConnectionString;
+            prOdataServiceUrl = cOdataServiceUrl;
 
             LastActivityTime = new DateTime(0);
             LastServiceError = "";
