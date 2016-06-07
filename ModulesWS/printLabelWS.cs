@@ -35,7 +35,7 @@ namespace PrintWindowsService
 
             Boolean boolPrintLabel = false;
             Boolean boolConvertLabel = false;
-            LabelTemplate.vpEventLog = vpEventLog;
+            //LabelTemplate.vpEventLog = vpEventLog;
             LabelTemplate lTemplate = new LabelTemplate(templateFile);
             try
             {

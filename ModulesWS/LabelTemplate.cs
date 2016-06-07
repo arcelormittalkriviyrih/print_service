@@ -12,24 +12,21 @@ namespace PrintWindowsService
     /// </summary>
     public class LabelTemplate
     {
-        private SpreadsheetDocument spreadSheet;
-        private WorksheetPart worksheetPartParams; 
-        private WorkbookPart workbookpart;
-        public static EventLog vpEventLog;
-        //private Sheet worksheetParams;
-
+        private SpreadsheetDocument spreadSheet = null;
+        private WorkbookPart workbookpart = null;
+        private Sheet worksheetParams = null;
+        private WorksheetPart worksheetPartParams = null; 
+        //public static EventLog vpEventLog;
 
         public LabelTemplate(string aTemplateName)
         {
             spreadSheet = SpreadsheetDocument.Open(aTemplateName, true);
             workbookpart = spreadSheet.WorkbookPart;
-            //worksheetParams = (Sheet)workbookpart.Workbook.Sheets.FirstOrDefault();
-            string id = workbookpart.Workbook.Descendants<Sheet>().First(s => (s.SheetId == "2")).Id;
-            //  worksheetPartParams = (WorksheetPart)spreadSheet.WorkbookPart.GetPartById(worksheetParams.Id);
-            worksheetPartParams = (WorksheetPart)(workbookpart.GetPartById(id));
+            worksheetParams = workbookpart.Workbook.Descendants<Sheet>().First(s => (s.SheetId == "2"));
+            worksheetPartParams = (WorksheetPart)(workbookpart.GetPartById(worksheetParams.Id));
         }
 
-        ~LabelTemplate()
+        /*~LabelTemplate()
         {
             try
             {
@@ -39,7 +36,7 @@ namespace PrintWindowsService
             {
                 senderMonitorEvent.sendMonitorEvent(vpEventLog, "Spread Sheet dispose failed: " + ex.ToString(), EventLogEntryType.Error);                
             }            
-        }
+        }*/
 
         private Cell CheckEmptyCell(Row currentRow, Cell afterCell, string columnCell)
         {
@@ -93,6 +90,19 @@ namespace PrintWindowsService
             return resultValue;
         }
 
+        //delete all cache
+        private void RecalcRefCellValues()
+        {
+            WorksheetPart wsPartFirst = (WorksheetPart)(workbookpart.GetPartById(workbookpart.Workbook.Descendants<Sheet>().First(s => (s.SheetId == "1")).Id));
+            foreach (Cell refCell in wsPartFirst.Worksheet.Descendants<Cell>())
+            {
+                if ((refCell.DataType == null) & (refCell.CellFormula != null))
+                {
+                    refCell.CellValue.Remove();
+                }
+            }
+        }
+
         /// <summary>
         /// Fill data sheet of parameters
         /// </summary>
@@ -114,15 +124,18 @@ namespace PrintWindowsService
                     {
                         //first row for quantity
                         refCellC.CellValue = new CellValue(aJobProps.PrintQuantity);
+                        refCellC.DataType = new EnumValue<CellValues>(CellValues.Number);
                     }
                     else
                     {
                         //these rows for other params
                         refCellC.CellValue = new CellValue(aJobProps.getLabelParamater(GetCellValue(refCellA), int.Parse(GetCellValue(refCellB))));
+                        refCellC.DataType = new EnumValue<CellValues>(CellValues.String);
                     }
-                    refCellC.DataType = new EnumValue<CellValues>(CellValues.String);
                 }
             }
+            worksheetPartParams.Worksheet.Save();
+            RecalcRefCellValues();
             workbookpart.Workbook.Save();
             spreadSheet.Close();
         }
