@@ -69,14 +69,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\ModulesWS\jobPropsWS.cs">
-      <Link>jobPropsWS.cs</Link>
-    </Compile>
     <Compile Include="..\ModulesWS\ServicedbData.cs">
       <Link>ServicedbData.cs</Link>
     </Compile>
     <Compile Include="..\Modules\excelApp.cs">
       <Link>excelApp.cs</Link>
+    </Compile>
+    <Compile Include="..\Modules\jobProps.cs">
+      <Link>jobProps.cs</Link>
     </Compile>
     <Compile Include="..\Modules\PrintJobs.cs">
       <Link>PrintJobs.cs</Link>

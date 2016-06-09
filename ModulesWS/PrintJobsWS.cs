@@ -5,17 +5,6 @@ using System.IO;
 using System.Security.Principal;
 using System.Reflection;
 
-//[assembly:Instrumented("root\\PrintWindowsService")]
-//using Aspose.Cells;
-//using Aspose.Cells.Rendering;
-//using System.Drawing;
-//using System.Drawing.Imaging;
-//using System.Runtime.InteropServices;
-
-//using DocumentFormat.OpenXml;
-//using DocumentFormat.OpenXml.Packaging;
-//using DocumentFormat.OpenXml.Spreadsheet;
-
 namespace PrintWindowsService
 {
     /// <summary>
@@ -56,8 +45,25 @@ namespace PrintWindowsService
         /// </summary>
         private const string cOdataService = "OdataServiceUri";
 
+        /// <summary>
+        /// The name of the configuration parameter for the XlsConverter path
+        /// </summary>
         private const string cXlsConverterPath = "XlsConverterPath";
+
+        /// <summary>
+        /// The name of the configuration parameter for the Ghost Script path
+        /// </summary>
         private const string cGhostScriptPath = "GhostScriptPath";
+
+        /// <summary>
+        /// The name of the configuration parameter for the SMTP host
+        /// </summary>
+        private const string cSMTPHost = "SMTPHost";
+
+        /// <summary>
+        /// The name of the configuration parameter for the SMTP port
+        /// </summary>
+        private const string cSMTPPort = "SMTPPort";
 
         #endregion
 
@@ -104,7 +110,7 @@ namespace PrintWindowsService
                         }
                         m_EventLog.Source = cSystemEventSourceName;
                         m_EventLog.Log = lSystemEventLogName;
-                        printLabel.vpEventLog = m_EventLog;
+                        printLabelWS.vpEventLog = m_EventLog;
 
                         WindowsIdentity identity = WindowsIdentity.GetCurrent();
                         WindowsPrincipal principal = new WindowsPrincipal(identity);
@@ -139,17 +145,20 @@ namespace PrintWindowsService
             //dbConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings[cConnectionStringName].ConnectionString;
             OdataServiceUrl = System.Configuration.ConfigurationManager.AppSettings[cOdataService];
 
-            printLabel.pingTimeoutInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPingTimeoutName]);
-            printLabel.templateFile = Path.GetTempPath() + "Label.xlsx";
-            printLabel.xlsConverterPath = System.Configuration.ConfigurationManager.AppSettings[cXlsConverterPath]; ;
-            printLabel.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath]; ;
+            printLabelWS.pingTimeoutInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPingTimeoutName]);
+            printLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
+            printLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
+            printLabelWS.xlsConverterPath = System.Configuration.ConfigurationManager.AppSettings[cXlsConverterPath];
+            printLabelWS.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath];
+            printLabelWS.SMTPHost = System.Configuration.ConfigurationManager.AppSettings[cSMTPHost];
+            printLabelWS.SMTPPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cSMTPPort]);
 
             wmiProductInfo = new ProductInfo(cServiceTitle,
                                              Environment.MachineName,
                                              Assembly.GetExecutingAssembly().GetName().Version.ToString(),
                                              DateTime.Now,
                                              printTaskFrequencyInSeconds,
-                                             printLabel.pingTimeoutInSeconds,
+                                             printLabelWS.pingTimeoutInSeconds,
                                              OdataServiceUrl);
 
             m_PrintTimer = new System.Timers.Timer();
@@ -241,23 +250,39 @@ namespace PrintWindowsService
                 string printState;
                 //labelDbData lDbData = new labelDbData(dbConnectionString);
                 ServicedbData lDbData = new ServicedbData(OdataServiceUrl);
-                lDbData.fillJobData(ref JobData);
+                lDbData.fillPrintJobData(JobData);
 
                 foreach (jobPropsWS job in JobData)
                 {
                     if (job.isExistsTemplate)
                     {
                         job.prepareTemplate();
-                        if (printLabel.printTemplate(job))
+                        if (job.Command == "Print")
                         {
-                            printState = "Printed";
-                            wmiProductInfo.LastActivityTime = DateTime.Now;
+                            if (printLabelWS.printTemplate(job))
+                            {
+                                printState = "Done";
+                                wmiProductInfo.LastActivityTime = DateTime.Now;
+                            }
+                            else
+                            {
+                                printState = "Failed";
+                            }
+                            lLastError = String.Format("JobOrderID: {0}. Print to: {1}. Status: {2}", job.JobOrderID, job.PrinterName, printState);
                         }
                         else
                         {
-                            printState = "Failed";
+                            if (printLabelWS.emailTemplate(job))
+                            {
+                                printState = "Done";
+                                wmiProductInfo.LastActivityTime = DateTime.Now;
+                            }
+                            else
+                            {
+                                printState = "Failed";
+                            }
+                            lLastError = String.Format("JobOrderID: {0}. Mail to: {1}. Status: {2}", job.JobOrderID, job.CommandRule, printState);
                         }
-                        lLastError = String.Format("ProductionResponseID: {0}. Print to: {1}. Status: {2}", job.ProductionResponseID, job.PrinterName, printState);
                         senderMonitorEvent.sendMonitorEvent(vpEventLog, lLastError, printState == "Failed" ? EventLogEntryType.FailureAudit : EventLogEntryType.SuccessAudit);
                         if (printState == "Failed")
                         {
@@ -272,7 +297,10 @@ namespace PrintWindowsService
                         wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                     }
 
-                    lDbData.updateJobStatus(job.ProductionResponseID, printState);
+                    if (printState == "Done")
+                    {
+                        lDbData.updateJobStatus(job.JobOrderID, printState);
+                    }
                 }
             }
             catch (Exception ex)

@@ -3,7 +3,6 @@ using System.Linq;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
-using System.Diagnostics;
 
 namespace PrintWindowsService
 {
@@ -16,7 +15,6 @@ namespace PrintWindowsService
         private WorkbookPart workbookpart = null;
         private Sheet worksheetParams = null;
         private WorksheetPart worksheetPartParams = null; 
-        //public static EventLog vpEventLog;
 
         public LabelTemplate(string aTemplateName)
         {
@@ -25,18 +23,6 @@ namespace PrintWindowsService
             worksheetParams = workbookpart.Workbook.Descendants<Sheet>().First(s => (s.SheetId == "2"));
             worksheetPartParams = (WorksheetPart)(workbookpart.GetPartById(worksheetParams.Id));
         }
-
-        /*~LabelTemplate()
-        {
-            try
-            {
-                spreadSheet.Dispose();
-            }
-            catch (Exception ex)
-            {
-                senderMonitorEvent.sendMonitorEvent(vpEventLog, "Spread Sheet dispose failed: " + ex.ToString(), EventLogEntryType.Error);                
-            }            
-        }*/
 
         private Cell CheckEmptyCell(Row currentRow, Cell afterCell, string columnCell)
         {
@@ -101,6 +87,9 @@ namespace PrintWindowsService
                     refCell.CellValue.Remove();
                 }
             }
+            workbookpart.Workbook.CalculationProperties.ForceFullCalculation = true;
+            workbookpart.Workbook.CalculationProperties.FullCalculationOnLoad = true;
+            wsPartFirst.Worksheet.Save();
         }
 
         /// <summary>
@@ -119,19 +108,20 @@ namespace PrintWindowsService
                 {
                     Cell refCellB = CheckEmptyCell(rowParam, refCellA, "B");
                     Cell refCellC = CheckEmptyCell(rowParam, refCellB, "C");
+                    Cell refCellD = CheckEmptyCell(rowParam, refCellC, "D");
 
-                    if (rowParam.RowIndex == 1)
+                    /*if (rowParam.RowIndex == 1)
                     {
                         //first row for quantity
                         refCellC.CellValue = new CellValue(aJobProps.PrintQuantity);
                         refCellC.DataType = new EnumValue<CellValues>(CellValues.Number);
                     }
                     else
-                    {
+                    {*/
                         //these rows for other params
-                        refCellC.CellValue = new CellValue(aJobProps.getLabelParamater(GetCellValue(refCellA), int.Parse(GetCellValue(refCellB))));
-                        refCellC.DataType = new EnumValue<CellValues>(CellValues.String);
-                    }
+                        refCellD.CellValue = new CellValue(aJobProps.getLabelParameter(GetCellValue(refCellA), GetCellValue(refCellB)));
+                        refCellD.DataType = new EnumValue<CellValues>(CellValues.String);
+                    //}
                 }
             }
             worksheetPartParams.Worksheet.Save();

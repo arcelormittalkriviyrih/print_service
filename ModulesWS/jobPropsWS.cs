@@ -10,40 +10,47 @@ namespace PrintWindowsService
     /// </summary>
     public class jobPropsWS
     {
-        private int productionResponseID;
-        private string printerName;
-        private string ipAddress;
-        private string printQuantity;
+        private int jobOrderID;
+        private string command;
+        private string commandRule;
         private byte[] xlFile;
+        private List<EquipmentPropertyValue> tableEquipmentProperty;
         private List<PrintPropertiesValue> tableLabelProperty;
 
         /// <summary>
-        /// Production response ID
+        /// Job order ID
         /// </summary>
-        public int ProductionResponseID
+        public int JobOrderID
         {
-            get { return productionResponseID; }
+            get { return jobOrderID; }
         }
         /// <summary>
-        /// Printer for print label
+        /// Job order command
+        /// </summary>
+        public string Command
+        {
+            get { return command; }
+        }
+        /// <summary>
+        /// Job order command
+        /// </summary>
+        public string CommandRule
+        {
+            get { return commandRule; }
+        }
+        /// <summary>
+        /// Printer name for print label
         /// </summary>
         public string PrinterName
         {
-            get { return printerName; }
+            get { return getEquipmentProperty("PRINTER_NAME"); }
         }
         /// <summary>
         /// IP of printer
         /// </summary>
         public string IpAddress
         {
-            get { return ipAddress; }
-        }
-        /// <summary>
-        /// Quantity parameter of label
-        /// </summary>
-        public string PrintQuantity
-        {
-            get { return printQuantity; }
+            get { return getEquipmentProperty("PRINTER_IP"); }
         }
         /// <summary>
         /// Is exists template of label
@@ -53,15 +60,19 @@ namespace PrintWindowsService
             get { return xlFile.Length > 0; }
         }
 
-        public jobPropsWS(int cProductionResponseID, byte[] cXlFile, List<PrintPropertiesValue> cTableLabelProperty)
+        public jobPropsWS(int cJobOrderID, 
+                          string cCommand,
+                          string cCommandRule,
+                          byte[] cXlFile, 
+                          List<EquipmentPropertyValue> cTableEquipmentProperty, 
+                          List<PrintPropertiesValue> cTableLabelProperty)
         {
-            productionResponseID = cProductionResponseID;
+            jobOrderID = cJobOrderID;
+            command = cCommand;
+            commandRule = cCommandRule;
             xlFile = cXlFile;
+            tableEquipmentProperty = cTableEquipmentProperty;
             tableLabelProperty = cTableLabelProperty;
-
-            printerName = getLabelParamater("EquipmentProperty", 2);
-            ipAddress = getLabelParamater("EquipmentProperty", 3);
-            printQuantity = getLabelParamater("Weight", 0);
         }
         /// <summary>
         /// Prepare template for print
@@ -70,7 +81,7 @@ namespace PrintWindowsService
         {
             if (xlFile.Length > 0)
             {
-                using (FileStream fs = new FileStream(printLabel.templateFile, FileMode.Create))
+                using (FileStream fs = new FileStream(printLabelWS.ExcelTemplateFile, FileMode.Create))
                 {
                     fs.Write(xlFile, 0, xlFile.Length);
                     fs.Close();
@@ -78,16 +89,31 @@ namespace PrintWindowsService
             }
         }
         /// <summary>
-        /// Return parameter value by TypeProperty and ClassPropertyID
+        /// Return label parameter value by TypeProperty and PropertyCode
         /// </summary>
-        public string getLabelParamater(string aTypeProperty, int aClassPropertyID)
+        public string getLabelParameter(string aTypeProperty, string aPropertyCode)
         {
             string ParamValue = "";
 
-            PrintPropertiesValue propertyFind = tableLabelProperty.Find(x => (x.TypeProperty == aTypeProperty) & (x.ClassPropertyID == aClassPropertyID));
+            PrintPropertiesValue propertyFind = tableLabelProperty.Find(x => (x.TypeProperty == aTypeProperty) & (x.PropertyCode == aPropertyCode));
             if (propertyFind != null)
             {
-                ParamValue = propertyFind.ValueProperty;
+                ParamValue = propertyFind.Value;
+            }
+
+            return ParamValue;
+        }
+        /// <summary>
+        /// Return equipment property value by Property
+        /// </summary>
+        public string getEquipmentProperty(string aProperty)
+        {
+            string ParamValue = "";
+
+            EquipmentPropertyValue propertyFind = tableEquipmentProperty.Find(x => (x.Property == aProperty));
+            if (propertyFind != null)
+            {
+                ParamValue = propertyFind.Value == null ? "" : propertyFind.Value.ToString();
             }
 
             return ParamValue;

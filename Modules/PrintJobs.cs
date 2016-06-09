@@ -251,13 +251,14 @@ namespace PrintWindowsService
                 string printState;
                 //labelDbData lDbData = new labelDbData(dbConnectionString);
                 ServicedbData lDbData = new ServicedbData(OdataServiceUrl);
-                lDbData.fillJobData(ref JobData);
+                lDbData.fillJobData(JobData);
 
                 foreach (jobPropsWS job in JobData)
                 {
                     if (job.isExistsTemplate)
                     {
                         job.prepareTemplate();
+
                         if (printLabel.printTemplate(job))
                         {
                             printState = "Printed";
@@ -267,7 +268,7 @@ namespace PrintWindowsService
                         {
                             printState = "Failed";
                         }
-                        lLastError = String.Format("ProductionResponseID: {0}. Print to: {1}. Status: {2}", job.ProductionResponseID, job.PrinterName, printState);
+                        lLastError = String.Format("JobOrderID: {0}. Print to: {1}. Status: {2}", job.JobOrderID, job.PrinterName, printState);
                         senderMonitorEvent.sendMonitorEvent(vpEventLog, lLastError, printState == "Failed" ? EventLogEntryType.FailureAudit : EventLogEntryType.SuccessAudit);
                         if (printState == "Failed")
                         {
@@ -282,7 +283,7 @@ namespace PrintWindowsService
                         wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                     }
 
-                    lDbData.updateJobStatus(job.ProductionResponseID, printState);
+                    lDbData.updateJobStatus(job.JobOrderID, printState);
                 }
             }
             catch (Exception ex)

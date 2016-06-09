@@ -8,13 +8,21 @@ using System.IO;
 namespace PrintWindowsService
 {
     /// <summary>
+    /// Equipment properties
+    /// </summary>
+    public class EquipmentPropertyValue
+    {
+        public string Property { get; set; }
+        public object Value { get; set; }
+    }
+    /// <summary>
     /// Property values class
     /// </summary>
     public class PrintPropertiesValue
     {
         public string TypeProperty { get; set; }
-        public int ClassPropertyID { get; set; }
-        public string ValueProperty { get; set; }
+        public string PropertyCode { get; set; }
+        public string Value { get; set; }
     }
 
     /// <summary>
@@ -25,20 +33,43 @@ namespace PrintWindowsService
         private string webServiceUrl;
 
         /// <summary>
-        /// Production response data
+        /// Job orders for print
         /// </summary>
-        private class ProductionResponseValue
+        private class JobOrdersValue
         {
             public int ID { get; set; }
-            public object ProductSegmentID { get; set; }
-            public object ProcessSegmentID { get; set; }
+            public string Command { get; set; }
+            public object CommandRule { get; set; }
         }
 
-        private class ProductionResponseRoot
+        private class JobOrdersRoot
         {
             [JsonProperty("odata.metadata")]
             public string Metadata { get; set; }
-            public List<ProductionResponseValue> value { get; set; }
+            public List<JobOrdersValue> value { get; set; }
+        }
+
+        /// <summary>
+        /// Print job parameters
+        /// </summary>
+        private class PrintJobParametersValue
+        {
+            public string Property { get; set; }
+            public object Value { get; set; }
+        }
+
+        private class PrintJobParametersRoot
+        {
+            [JsonProperty("odata.metadata")]
+            public string Metadata { get; set; }
+            public List<PrintJobParametersValue> value { get; set; }
+        }
+
+        private class EquipmentPropertyRoot
+        {
+            [JsonProperty("odata.metadata")]
+            public string Metadata { get; set; }
+            public List<EquipmentPropertyValue> value { get; set; }
         }
 
         private class PrintPropertiesRoot
@@ -63,9 +94,21 @@ namespace PrintWindowsService
             public List<LabelTemplateValue> value { get; set; }
         }
 
-        private List<ProductionResponseValue> DeserializeProdResponse(string json)
+        private List<JobOrdersValue> DeserializeJobOrders(string json)
         {
-            ProductionResponseRoot prRoot = JsonConvert.DeserializeObject<ProductionResponseRoot>(json);
+            JobOrdersRoot prRoot = JsonConvert.DeserializeObject<JobOrdersRoot>(json);
+            return prRoot.value;
+        }
+
+        private List<PrintJobParametersValue> DeserializePrintJobParameters(string json)
+        {
+            PrintJobParametersRoot prRoot = JsonConvert.DeserializeObject<PrintJobParametersRoot>(json);
+            return prRoot.value;
+        }
+
+        private List<EquipmentPropertyValue> DeserializeEquipmentProperty(string json)
+        {
+            EquipmentPropertyRoot prRoot = JsonConvert.DeserializeObject<EquipmentPropertyRoot>(json);
             return prRoot.value;
         }
 
@@ -125,24 +168,57 @@ namespace PrintWindowsService
         }
 
         /// <summary>
+        /// Return print job parameter value by Property
+        /// </summary>
+        private string getPrintJobParameter(List<PrintJobParametersValue> aPrintJobParametersObj, string aProperty)
+        {
+            string ParamValue = "";
+
+            PrintJobParametersValue propertyFind = aPrintJobParametersObj.Find(x => (x.Property == aProperty));
+            if (propertyFind != null)
+            {
+                ParamValue = propertyFind.Value == null ? "" : propertyFind.Value.ToString();
+            }
+
+            return ParamValue;
+        }
+
+        /// <summary>
         /// Processing of input queue and generation of list of labels for printing
         /// </summary>
-        public void fillJobData(ref List<jobPropsWS> resultData)
+        public void fillPrintJobData(List<jobPropsWS> resultData)
         {
             byte[] XlFile = null;
-            string ProductionUrl = CreateRequest("v_ProductionResponse?$filter=ResponseState%20eq%20%27ToPrint%27&$select=ID,ProductSegmentID,ProcessSegmentID");
-            string ProductionResponse = MakeRequest(ProductionUrl);
-            //JsonValue json = JsonValue.Parse(result);
+            string JobOrdersUrl = CreateRequest("v_JobOrders?$filter=WorkType%20eq%20%27Print%27%20and%20DispatchStatus%20eq%20%27ToPrint%27&$select=ID,Command,CommandRule");
+            string JobOrders = MakeRequest(JobOrdersUrl);
+            List<JobOrdersValue> JobOrdersObj = DeserializeJobOrders(JobOrders);
 
-            List<ProductionResponseValue> ProductionResponseObj = DeserializeProdResponse(ProductionResponse);
-            foreach (ProductionResponseValue prValue in ProductionResponseObj)
+            foreach (JobOrdersValue joValue in JobOrdersObj)
             {
-                string PropertiesUrl = CreateRequest(String.Format("v_PrintProperties?$filter=ProductionResponse%20eq%20{0}&$select=TypeProperty,ClassPropertyID,ValueProperty", prValue.ID));
-                string PropertiesResponse = MakeRequest(PropertiesUrl);
-                List<PrintPropertiesValue> PrintPropertiesObj = DeserializePrintProperties(PropertiesResponse);
+                string PrintJobParametersUrl = CreateRequest(String.Format("v_PrintJobParameters?$filter=JobOrderID%20eq%20{0}%20&$select=Property,Value",
+                                                                            joValue.ID));
+                string PrintJobParameters = MakeRequest(PrintJobParametersUrl);
+                List<PrintJobParametersValue> PrintJobParametersObj = DeserializePrintJobParameters(PrintJobParameters);
 
-                string TemplateUrl = CreateRequest(String.Format("v_ProductionParameter_Files?$filter=ProductSegmentID%20eq%20{0}%20and%20ProcessSegmentID%20eq%20{1}%20and%20Value%20eq%20%27{2}%27&$select=Data",
-                                                                 prValue.ProductSegmentID == null ? 0 : prValue.ProductSegmentID, prValue.ProcessSegmentID == null ? 0 : prValue.ProcessSegmentID, "TEMPLATE"));
+                string PrinterID = getPrintJobParameter(PrintJobParametersObj, "PrinterID");
+                string MaterialLotID = getPrintJobParameter(PrintJobParametersObj, "MaterialLotID");
+
+                List<EquipmentPropertyValue> EquipmentPropertyObj = null;
+                if (PrinterID != "")
+                {
+                    string EquipmentPropertyUrl = CreateRequest(String.Format("v_EquipmentProperty?$filter=EquipmentID%20eq%20{0}%20&$select=Property,Value",
+                                                                               PrinterID));
+                    string EquipmentProperty = MakeRequest(EquipmentPropertyUrl);
+                    EquipmentPropertyObj = DeserializeEquipmentProperty(EquipmentProperty);
+                }
+
+                string PrintPropertiesUrl = CreateRequest(String.Format("v_PrintProperties?$filter=MaterialLotID%20eq%20{0}&$select=TypeProperty,PropertyCode,Value",
+                                                                         MaterialLotID));
+                string PrintPropertiesResponse = MakeRequest(PrintPropertiesUrl);
+                List<PrintPropertiesValue> PrintPropertiesObj = DeserializePrintProperties(PrintPropertiesResponse);
+
+                string TemplateUrl = CreateRequest(String.Format("v_PrintFile?$filter=MaterialLotID%20eq%20{0}%20and%20Property%20eq%20%27{1}%27&$select=Data",
+                                                                  MaterialLotID, "TEMPLATE"));
                 string TemplateResponse = MakeRequest(TemplateUrl);
                 List<LabelTemplateValue> LabelTemplateObj = DeserializeLabelTemplate(TemplateResponse);
                 if (LabelTemplateObj.Count > 0)
@@ -150,19 +226,24 @@ namespace PrintWindowsService
                     XlFile = LabelTemplateObj[0].Data;
                 }
 
-                resultData.Add(new jobPropsWS(prValue.ID, XlFile, PrintPropertiesObj));
+                resultData.Add(new jobPropsWS(joValue.ID,
+                                              joValue.Command,
+                                              (string)(joValue.CommandRule),
+                                              XlFile, 
+                                              EquipmentPropertyObj, 
+                                              PrintPropertiesObj));
             }
         }
 
         /// <summary>
         /// Update status of label print
         /// </summary>
-        public void updateJobStatus(int aProductionResponseID, string aPrintState)
+        public void updateJobStatus(int aJobOrderID, string aPrintState)
         {
-            string UpdateStatusUrl = CreateRequest(String.Format("ProductionResponse({0})", aProductionResponseID));
+            string UpdateStatusUrl = CreateRequest(String.Format("JobOrder({0})", aJobOrderID));
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(UpdateStatusUrl);
 
-            string payload = "{" + string.Format(@"""ResponseState"":""{0}""", aPrintState) + "}";
+            string payload = "{" + string.Format(@"""DispatchStatus"":""{0}""", aPrintState) + "}";
 
             byte[] body = Encoding.UTF8.GetBytes(payload);
             request.Method = "PATCH";

@@ -48,20 +48,19 @@ namespace PrintWindowsService
             Boolean boolPrintLabel = false;
             try
             {
-                //количество всегда на второй закладке в ячейке C1
                 Excel.Worksheet WsParams = xl.GetParamsSheet();
-                Excel.Range FindParamValue = (Excel.Range)WsParams.Cells[1, 3];
-                FindParamValue.Value = aJobProps.PrintQuantity;
+                //Excel.Range FindParamValue = (Excel.Range)WsParams.Cells[1, 3];
+                //FindParamValue.Value = aJobProps.PrintQuantity;
 
-                int iRow = 2;
+                int iRow = 1;
                 while (((Excel.Range)WsParams.Cells[iRow, 1]).Value != null)
                 {
-                    ((Excel.Range)WsParams.Cells[iRow, 3]).Value = aJobProps.getLabelParamater(((Excel.Range)WsParams.Cells[iRow, 1]).Value.ToString(), int.Parse(((Excel.Range)WsParams.Cells[iRow, 2]).Value.ToString()));
+                    ((Excel.Range)WsParams.Cells[iRow, 4]).Value = aJobProps.getLabelParameter(((Excel.Range)WsParams.Cells[iRow, 1]).Value.ToString(), ((Excel.Range)WsParams.Cells[iRow, 2]).Value.ToString());
                     iRow++;
                 }
 
                 WsParams = null;
-                FindParamValue = null;
+                //FindParamValue = null;
             }
             catch (Exception ex)
             {

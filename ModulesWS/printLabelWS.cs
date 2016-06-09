@@ -2,19 +2,24 @@
 using System.Data;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Mail;
 
 namespace PrintWindowsService
 {
     /// <summary>
     /// Class for initialising of parameters label and printing of the set label
     /// </summary>
-    public static class printLabel
+    public static class printLabelWS
     {
         public static int pingTimeoutInSeconds;
         public static EventLog vpEventLog;
-        public static string templateFile;
+        public static string ExcelTemplateFile;
+        public static string PDFTemplateFile;
         public static string xlsConverterPath;
         public static string ghostScriptPath;
+        public static string SMTPHost;
+        public static int SMTPPort;
 
         /// <summary>
         /// Printing of the prepared label
@@ -34,30 +39,7 @@ namespace PrintWindowsService
             }
 
             Boolean boolPrintLabel = false;
-            Boolean boolConvertLabel = false;
-            //LabelTemplate.vpEventLog = vpEventLog;
-            LabelTemplate lTemplate = new LabelTemplate(templateFile);
-            try
-            {
-                lTemplate.FillParamValues(aJobProps);
-            }
-            catch (Exception ex)
-            {
-                senderMonitorEvent.sendMonitorEvent(vpEventLog, "Can not prepare label template. Error: " + ex.ToString(), EventLogEntryType.Error);
-                return false;
-            }
-
-            try
-            {
-                boolConvertLabel = convertToPDF();
-            }
-            catch (Exception ex)
-            {
-                senderMonitorEvent.sendMonitorEvent(vpEventLog, "Can not convert label template to pdf. Error: " + ex.ToString(), EventLogEntryType.Error);
-                return false;
-            }
-
-            if (boolConvertLabel)
+            if (preparePDF(aJobProps))
             {
                 boolPrintLabel = PrintPDF(aJobProps.PrinterName);
             }
@@ -72,8 +54,9 @@ namespace PrintWindowsService
 
         private static bool convertToPDF()
         {
+            File.Delete(PDFTemplateFile);
             ProcessStartInfo startInfo = new ProcessStartInfo();
-            startInfo.Arguments = "\"" + templateFile + "\" \"" + Path.GetTempPath() + "Label.pdf" + "\"";
+            startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + PDFTemplateFile + "\"";
             startInfo.FileName = xlsConverterPath;
             startInfo.UseShellExecute = false;
 
@@ -94,7 +77,7 @@ namespace PrintWindowsService
         private static bool PrintPDF(string printerName)
         {
             ProcessStartInfo startInfo = new ProcessStartInfo();
-            startInfo.Arguments = " -sDEVICE=mswinpr2 -dLastPage=1 -dBATCH -dNOPAUSE -dPrinted -dNOSAFER -dNOPROMPT -dQUIET -sOutputFile=\"\\\\spool\\" + printerName + "\" \"" + Path.GetTempPath() + "Label.pdf" + "\" ";
+            startInfo.Arguments = " -sDEVICE=mswinpr2 -dLastPage=1 -dBATCH -dNOPAUSE -dPrinted -dNOSAFER -dNOPROMPT -dQUIET -sOutputFile=\"\\\\spool\\" + printerName + "\" \"" + PDFTemplateFile + "\" ";
             startInfo.FileName = ghostScriptPath;
             startInfo.UseShellExecute = false;
 
@@ -110,6 +93,90 @@ namespace PrintWindowsService
             int exitcode = process.ExitCode;
             process.Close();
             return exitcode == 0;
+        }
+
+        private static bool preparePDF(jobPropsWS aJobProps)
+        {
+            Boolean boolConvertLabel = false;
+            LabelTemplate lTemplate = new LabelTemplate(ExcelTemplateFile);
+            try
+            {
+                lTemplate.FillParamValues(aJobProps);
+            }
+            catch (Exception ex)
+            {
+                senderMonitorEvent.sendMonitorEvent(vpEventLog, "Can not prepare label template. Error: " + ex.ToString(), EventLogEntryType.Error);
+                return false;
+            }
+
+            try
+            {
+                boolConvertLabel = convertToPDF();
+            }
+            catch (Exception ex)
+            {
+                senderMonitorEvent.sendMonitorEvent(vpEventLog, "Can not convert label template to pdf. Error: " + ex.ToString(), EventLogEntryType.Error);
+                return false;
+            }
+
+            return boolConvertLabel;
+        }
+        private static bool EmailPDF(string emailAddresses)
+        {
+            MailMessage mail;
+            try
+            {
+                using (mail = new MailMessage())
+                {
+                    string mailFrom = "";
+                    String[] mailtoList = emailAddresses.Split(',');
+                    foreach (var mailTo in mailtoList)
+                    {
+                        if (mailTo != "")
+                        {
+                            mail.To.Add(new MailAddress(mailTo));
+                            mailFrom = mailTo;
+                        }
+                    }
+                    mail.From = new MailAddress(mailFrom);
+                    mail.Subject = "Label";
+                    mail.Body = "Label";
+                    mail.Attachments.Add(new Attachment(PDFTemplateFile));
+                    SmtpClient client = new SmtpClient();
+                    client.Host = SMTPHost;
+                    client.Port = SMTPPort;
+                    //client.EnableSsl = true;
+                    client.Credentials = CredentialCache.DefaultNetworkCredentials;
+                    client.DeliveryMethod = SmtpDeliveryMethod.Network;
+                    client.Send(mail);
+                }
+            }
+            catch (Exception ex)
+            {
+                senderMonitorEvent.sendMonitorEvent(vpEventLog, "Can not send email with label template. Error: " + ex.ToString(), EventLogEntryType.Error);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Email of the prepared label
+        /// </summary>
+        public static bool emailTemplate(jobPropsWS aJobProps)
+        {
+            Boolean boolEmailLabel = false;
+            if (preparePDF(aJobProps))
+            {
+                boolEmailLabel = EmailPDF(aJobProps.CommandRule);
+            }
+            else
+            {
+                senderMonitorEvent.sendMonitorEvent(vpEventLog, "Can not convert label template to pdf. Process failed", EventLogEntryType.Error);
+                return false;
+            }
+
+            return boolEmailLabel;
         }
     }
 }
