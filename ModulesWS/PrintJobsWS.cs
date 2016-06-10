@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Security.Principal;
 using System.Reflection;
+using CommonEventSender;
 
 namespace PrintWindowsService
 {
@@ -74,7 +75,7 @@ namespace PrintWindowsService
         /// </summary>
         private System.Timers.Timer m_PrintTimer;
 
-        private ProductInfo wmiProductInfo;
+        private PrintServiceProductInfo wmiProductInfo;
         private bool fJobStarted = false;
         //private string dbConnectionString;
         private string OdataServiceUrl;
@@ -153,13 +154,13 @@ namespace PrintWindowsService
             printLabelWS.SMTPHost = System.Configuration.ConfigurationManager.AppSettings[cSMTPHost];
             printLabelWS.SMTPPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cSMTPPort]);
 
-            wmiProductInfo = new ProductInfo(cServiceTitle,
-                                             Environment.MachineName,
-                                             Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                                             DateTime.Now,
-                                             printTaskFrequencyInSeconds,
-                                             printLabelWS.pingTimeoutInSeconds,
-                                             OdataServiceUrl);
+            wmiProductInfo = new PrintServiceProductInfo(cServiceTitle,
+                                                         Environment.MachineName,
+                                                         Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                                                         DateTime.Now,
+                                                         printTaskFrequencyInSeconds,
+                                                         printLabelWS.pingTimeoutInSeconds,
+                                                         OdataServiceUrl);
 
             m_PrintTimer = new System.Timers.Timer();
             m_PrintTimer.Interval = printTaskFrequencyInSeconds * 1000; // seconds to milliseconds
@@ -244,19 +245,19 @@ namespace PrintWindowsService
             //временно для тестирования*/
 
             string lLastError = "";
-            List<jobPropsWS> JobData = new List<jobPropsWS>();
+            List<PrintJobProps> JobData = new List<PrintJobProps>();
             try
             {
                 string printState;
                 //labelDbData lDbData = new labelDbData(dbConnectionString);
-                ServicedbData lDbData = new ServicedbData(OdataServiceUrl);
+                LabeldbData lDbData = new LabeldbData(OdataServiceUrl);
                 lDbData.fillPrintJobData(JobData);
 
-                foreach (jobPropsWS job in JobData)
+                foreach (PrintJobProps job in JobData)
                 {
                     if (job.isExistsTemplate)
                     {
-                        job.prepareTemplate();
+                        job.prepareTemplate(printLabelWS.ExcelTemplateFile);
                         if (job.Command == "Print")
                         {
                             if (printLabelWS.printTemplate(job))

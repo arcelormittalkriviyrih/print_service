@@ -95,7 +95,7 @@ namespace PrintWindowsService
         /// <summary>
         /// Fill data sheet of parameters
         /// </summary>
-        public void FillParamValues(jobPropsWS aJobProps)
+        public void FillParamValues(PrintJobProps aJobProps)
         {
             foreach (Row rowParam in worksheetPartParams.Worksheet.GetFirstChild<SheetData>().Elements<Row>())
             {

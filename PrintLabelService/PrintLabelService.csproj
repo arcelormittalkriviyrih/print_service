@@ -59,10 +59,6 @@
       <HintPath>..\packages\OpenXMLSDK-MOT.2.6.0.0\lib\DocumentFormat.OpenXml.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.8.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Configuration.Install" />
@@ -71,20 +67,13 @@
       <HintPath>..\packages\OpenXMLSDK-MOT.2.6.0.0\lib\System.IO.Packaging.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="System.Management" />
-    <Reference Include="System.Management.Instrumentation" />
     <Reference Include="System.Web.Extensions" />
-    <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.ServiceProcess" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\ModulesWS\jobPropsWS.cs">
-      <Link>jobPropsWS.cs</Link>
-    </Compile>
     <Compile Include="..\ModulesWS\LabelTemplate.cs">
       <Link>LabelTemplate.cs</Link>
     </Compile>
@@ -93,12 +82,6 @@
     </Compile>
     <Compile Include="..\ModulesWS\printLabelWS.cs">
       <Link>printLabelWS.cs</Link>
-    </Compile>
-    <Compile Include="..\ModulesWS\ServicedbData.cs">
-      <Link>ServicedbData.cs</Link>
-    </Compile>
-    <Compile Include="..\Modules\serviceMonitor.cs">
-      <Link>serviceMonitor.cs</Link>
     </Compile>
     <Compile Include="..\PrintLabelService\PrintService.cs">
       <SubType>Component</SubType>
@@ -135,6 +118,12 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ServicesLib\AMServicesLibrary.csproj">
+      <Project>{0bc81c48-d64e-40c8-9bee-4baecf6fe0c1}</Project>
+      <Name>AMServicesLibrary</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

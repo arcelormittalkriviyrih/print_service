@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Mail;
+using CommonEventSender;
 
 namespace PrintWindowsService
 {
@@ -24,7 +25,7 @@ namespace PrintWindowsService
         /// <summary>
         /// Printing of the prepared label
         /// </summary>
-        public static bool printTemplate(jobPropsWS aJobProps)
+        public static bool printTemplate(PrintJobProps aJobProps)
         {
             //перед печатью если задан IP сделать пинг
             if ((pingTimeoutInSeconds > 0) & (aJobProps.IpAddress != ""))
@@ -95,7 +96,7 @@ namespace PrintWindowsService
             return exitcode == 0;
         }
 
-        private static bool preparePDF(jobPropsWS aJobProps)
+        private static bool preparePDF(PrintJobProps aJobProps)
         {
             Boolean boolConvertLabel = false;
             LabelTemplate lTemplate = new LabelTemplate(ExcelTemplateFile);
@@ -163,7 +164,7 @@ namespace PrintWindowsService
         /// <summary>
         /// Email of the prepared label
         /// </summary>
-        public static bool emailTemplate(jobPropsWS aJobProps)
+        public static bool emailTemplate(PrintJobProps aJobProps)
         {
             Boolean boolEmailLabel = false;
             if (preparePDF(aJobProps))
