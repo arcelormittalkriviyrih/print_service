@@ -16,14 +16,23 @@ namespace PrintWindowsService
         private Sheet worksheetParams = null;
         private WorksheetPart worksheetPartParams = null; 
 
-        public LabelTemplate(string aTemplateName)
+        /// <summary>	Constructor. </summary>
+        ///
+        /// <param name="templateName">	Name of the template. </param>
+        public LabelTemplate(string templateName)
         {
-            spreadSheet = SpreadsheetDocument.Open(aTemplateName, true);
+            spreadSheet = SpreadsheetDocument.Open(templateName, true);
             workbookpart = spreadSheet.WorkbookPart;
             worksheetParams = workbookpart.Workbook.Descendants<Sheet>().First(s => (s.SheetId == "2"));
             worksheetPartParams = (WorksheetPart)(workbookpart.GetPartById(worksheetParams.Id));
         }
 
+        /// <summary>	Inserts a shared string item. </summary>
+        ///
+        /// <param name="text">			  	The text. </param>
+        /// <param name="shareStringPart">	The share string part. </param>
+        ///
+        /// <returns>	An int. </returns>
         private static int InsertSharedStringItem(string text, SharedStringTablePart shareStringPart)
         {
             // If the part does not contain a SharedStringTable, create one.
@@ -52,6 +61,13 @@ namespace PrintWindowsService
             return i;
         }
 
+        /// <summary>	Check empty cell. </summary>
+        ///
+        /// <param name="currentRow">	The current row. </param>
+        /// <param name="afterCell"> 	The after cell. </param>
+        /// <param name="columnCell">	The column cell. </param>
+        ///
+        /// <returns>	A Cell. </returns>
         private Cell CheckEmptyCell(Row currentRow, Cell afterCell, string columnCell)
         {
             Cell returnCell = currentRow.Elements<Cell>().Where(c => c.CellReference.Value == columnCell + currentRow.RowIndex).FirstOrDefault();
@@ -63,17 +79,22 @@ namespace PrintWindowsService
             return returnCell;
         }
 
-        private string GetCellValue(Cell aCell)
+        /// <summary>	Gets cell value. </summary>
+        ///
+        /// <param name="cell">	The cell. </param>
+        ///
+        /// <returns>	The cell value. </returns>
+        private string GetCellValue(Cell cell)
         {
-            string resultValue = "";
+            string resultValue = string.Empty;
 
-            if (aCell != null)
+            if (cell != null)
             {
-                resultValue = aCell.InnerText;
+                resultValue = cell.InnerText;
 
-                if (aCell.DataType != null)
+                if (cell.DataType != null)
                 {
-                    switch (aCell.DataType.Value)
+                    switch (cell.DataType.Value)
                     {
                         case CellValues.SharedString:
                             // For shared strings, look up the value in the
@@ -104,7 +125,7 @@ namespace PrintWindowsService
             return resultValue;
         }
 
-        //delete all cache
+        /// <summary>	Calculates the reference cell values. </summary>
         private void RecalcRefCellValues()
         {
             WorksheetPart wsPartFirst = (WorksheetPart)(workbookpart.GetPartById(workbookpart.Workbook.Descendants<Sheet>().First(s => (s.SheetId == "1")).Id));
@@ -123,7 +144,7 @@ namespace PrintWindowsService
         /// <summary>
         /// Fill data sheet of parameters
         /// </summary>
-        public void FillParamValues(PrintJobProps aJobProps)
+        public void FillParamValues(PrintJobProps jobProps)
         {
             SharedStringTablePart shareStringPart;
             if (spreadSheet.WorkbookPart.GetPartsOfType<SharedStringTablePart>().Count() > 0)
@@ -160,7 +181,7 @@ namespace PrintWindowsService
                     else
                     {*/
                     //these rows for other params
-                    int index = InsertSharedStringItem(aJobProps.getLabelParameter(GetCellValue(refCellA), GetCellValue(refCellB)), shareStringPart);
+                    int index = InsertSharedStringItem(jobProps.getLabelParameter(GetCellValue(refCellA), GetCellValue(refCellB)), shareStringPart);
                     refCellD.CellValue = new CellValue(index.ToString());
                     refCellD.DataType = new EnumValue<CellValues>(CellValues.SharedString);
                     //}

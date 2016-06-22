@@ -41,7 +41,7 @@ namespace PrintWindowsService.Tests
                             if (cell.CellReference == "A26")
                             {
                                 cell.CellValue = new CellValue("4567");
-                                cell.DataType = new EnumValue<CellValues>(CellValues.String);
+                                cell.DataType = new EnumValue<CellValues>(CellValues.string);
 
                                 break;
                             }
@@ -116,7 +116,7 @@ namespace PrintWindowsService.Tests
 в сервисе не работает System.Drawing.Printing 
 System.Drawing.Printing.PrintDocument pd = new System.Drawing.Printing.PrintDocument();
 
-//String pkInstalledPrinters = "";
+//string pkInstalledPrinters = "";
 //System.Drawing.Printing.PrinterSettings.StringCollection sc = System.Drawing.Printing.PrinterSettings.InstalledPrinters;
 //for (int i = 0; i < sc.Count; i++)
 //{
@@ -189,7 +189,7 @@ public static class myPrinters
 
     private const int ERROR_INSUFFICIENT_BUFFER = 122;
 
-    public static String getDefaultPrinter()
+    public static string getDefaultPrinter()
     {
 
         int pcchBuffer = 0;
@@ -299,12 +299,12 @@ public static class myPrinters
                             {
                                 printState = "Failed";
                             }
-                            senderMonitorEvent.sendMonitorEvent(vpEventLog, String.Format("ProductionResponseID: {0}. Print to: {1}. Status: {2}", dbReaderProdResponse["ID"], ToPrinterName, printState), printState == "Failed"? EventLogEntryType.FailureAudit : EventLogEntryType.SuccessAudit);
+                            SenderMonitorEvent.sendMonitorEvent(vpEventLog, string.Format("ProductionResponseID: {0}. Print to: {1}. Status: {2}", dbReaderProdResponse["ID"], ToPrinterName, printState), printState == "Failed"? EventLogEntryType.FailureAudit : EventLogEntryType.SuccessAudit);
                         }
                         else
                         {
                             printState = "Failed";
-                            senderMonitorEvent.sendMonitorEvent(vpEventLog, "Excel template is empty", EventLogEntryType.Error);
+                            SenderMonitorEvent.sendMonitorEvent(vpEventLog, "Excel template is empty", EventLogEntryType.Error);
                         }
 
                         CommandUpdateStatus.Parameters["@ProductionResponseID"].Value = dbReaderProdResponse["ID"];
@@ -317,13 +317,13 @@ public static class myPrinters
             }
             catch (Exception ex)
             {
-                senderMonitorEvent.sendMonitorEvent(vpEventLog, "Get data from DB. Error: " + ex.ToString(), EventLogEntryType.Error);
+                SenderMonitorEvent.sendMonitorEvent(vpEventLog, "Get data from DB. Error: " + ex.ToString(), EventLogEntryType.Error);
             }
             finally
             {
                 dbConnection.Close();
             }
-            senderMonitorEvent.sendMonitorEvent(vpEventLog, string.Format("Print is done. {0} tasks", RequestCount), EventLogEntryType.Information);
+            SenderMonitorEvent.sendMonitorEvent(vpEventLog, string.Format("Print is done. {0} tasks", RequestCount), EventLogEntryType.Information);
 */
 
 /*

@@ -32,6 +32,11 @@ namespace JobPropsService
             get { return commandRule; }
         }
 
+        /// <summary>	Constructor. </summary>
+        ///
+        /// <param name="cJobOrderID"> 	Identifier for the job order. </param>
+        /// <param name="cCommand">	   	The command. </param>
+        /// <param name="cCommandRule">	The command rule. </param>s
         public JobProps(int cJobOrderID,
                         string cCommand,
                         string cCommandRule)

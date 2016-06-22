@@ -87,8 +87,8 @@
     <Compile Include="..\ModulesWS\PrintJobsWS.cs">
       <Link>PrintJobsWS.cs</Link>
     </Compile>
-    <Compile Include="..\ModulesWS\printLabelWS.cs">
-      <Link>printLabelWS.cs</Link>
+    <Compile Include="..\ModulesWS\PrintLabelWS.cs">
+      <Link>PrintLabelWS.cs</Link>
     </Compile>
     <Compile Include="..\PrintLabelService\PrintService.cs">
       <SubType>Component</SubType>

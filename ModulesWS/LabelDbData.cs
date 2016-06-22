@@ -8,9 +8,16 @@ namespace PrintWindowsService
     /// <summary>
     /// Equipment properties
     /// </summary>
-    public class EquipmentPropertyValue
+	public class EquipmentPropertyValue
     {
+        /// <summary>	Gets or sets the property. </summary>
+        ///
+        /// <value>	The property. </value>
         public string Property { get; set; }
+
+        /// <summary>	Gets or sets the value. </summary>
+        ///
+        /// <value>	The value. </value>
         public object Value { get; set; }
     }
     /// <summary>
@@ -18,8 +25,19 @@ namespace PrintWindowsService
     /// </summary>
     public class PrintPropertiesValue
     {
+        /// <summary>	Gets or sets the type property. </summary>
+        ///
+        /// <value>	The type property. </value>
         public string TypeProperty { get; set; }
+
+        /// <summary>	Gets or sets the property code. </summary>
+        ///
+        /// <value>	The property code. </value>
         public string PropertyCode { get; set; }
+
+        /// <summary>	Gets or sets the value. </summary>
+        ///
+        /// <value>	The value. </value>
         public string Value { get; set; }
     }
 
@@ -28,6 +46,7 @@ namespace PrintWindowsService
     /// </summary>
     public class LabeldbData
     {
+        /// <summary>	URL of the web service. </summary>
         private string webServiceUrl;
 
         /// <summary>
@@ -46,17 +65,30 @@ namespace PrintWindowsService
             public List<PrintJobParametersValue> value { get; set; }
         }
 
+        /// <summary>	An equipment property root. </summary>
         private class EquipmentPropertyRoot
         {
             [JsonProperty("odata.metadata")]
             public string Metadata { get; set; }
+
+            /// <summary>	Gets or sets the value. </summary>
+            ///
+            /// <value>	The value. </value>
             public List<EquipmentPropertyValue> value { get; set; }
         }
 
+        /// <summary>	A print properties root. </summary>
         private class PrintPropertiesRoot
         {
+            /// <summary>	Gets or sets the metadata. </summary>
+            ///
+            /// <value>	The metadata. </value>
             [JsonProperty("odata.metadata")]
             public string Metadata { get; set; }
+
+            /// <summary>	Gets or sets the value. </summary>
+            ///
+            /// <value>	The value. </value>
             public List<PrintPropertiesValue> value { get; set; }
         }
 
@@ -65,59 +97,91 @@ namespace PrintWindowsService
         /// </summary>
         private class LabelTemplateValue
         {
+            /// <summary>	Gets or sets the data. </summary>
+            ///
+            /// <value>	The data. </value>
             public byte[] Data { get; set; }
         }
 
+        /// <summary>	A label template root. </summary>
         private class LabelTemplateRoot
         {
+            /// <summary>	Gets or sets the metadata. </summary>
+            ///
+            /// <value>	The metadata. </value>
             [JsonProperty("odata.metadata")]
             public string Metadata { get; set; }
+
+            /// <summary>	Gets or sets the value. </summary>
+            ///
+            /// <value>	The value. </value>
             public List<LabelTemplateValue> value { get; set; }
         }
 
+        /// <summary>	Deserialize print job parameters. </summary>
+        ///
+        /// <param name="json">	The JSON. </param>
+        ///
+        /// <returns>	A List&lt;PrintJobParametersValue&gt; </returns>
         private List<PrintJobParametersValue> DeserializePrintJobParameters(string json)
         {
             PrintJobParametersRoot prRoot = JsonConvert.DeserializeObject<PrintJobParametersRoot>(json);
             return prRoot.value;
         }
 
+        /// <summary>	Deserialize equipment property. </summary>
+        ///
+        /// <param name="json">	The JSON. </param>
+        ///
+        /// <returns>	A List&lt;EquipmentPropertyValue&gt; </returns>
         private List<EquipmentPropertyValue> DeserializeEquipmentProperty(string json)
         {
             EquipmentPropertyRoot prRoot = JsonConvert.DeserializeObject<EquipmentPropertyRoot>(json);
             return prRoot.value;
         }
 
+        /// <summary>	Deserialize print properties. </summary>
+        ///
+        /// <param name="json">	The JSON. </param>
+        ///
+        /// <returns>	A List&lt;PrintPropertiesValue&gt; </returns>
         private List<PrintPropertiesValue> DeserializePrintProperties(string json)
         {
             PrintPropertiesRoot ppRoot = JsonConvert.DeserializeObject<PrintPropertiesRoot>(json);
             return ppRoot.value;
         }
 
+        /// <summary>	Deserialize label template. </summary>
+        ///
+        /// <param name="json">	The JSON. </param>
+        ///
+        /// <returns>	A List&lt;LabelTemplateValue&gt; </returns>
         private List<LabelTemplateValue> DeserializeLabelTemplate(string json)
         {
             LabelTemplateRoot ltRoot = JsonConvert.DeserializeObject<LabelTemplateRoot>(json);
             return ltRoot.value;
         }
 
-        public LabeldbData(string aWebServiceUrl)
+        /// <summary>	Constructor. </summary>
+        ///
+        /// <param name="webServiceUrl">	URL of the web service. </param>
+        public LabeldbData(string webServiceUrl)
         {
-            webServiceUrl = aWebServiceUrl;
+            this.webServiceUrl = webServiceUrl;
         }
 
         /// <summary>
         /// Return print job parameter value by Property
         /// </summary>
-        private string getPrintJobParameter(List<PrintJobParametersValue> aPrintJobParametersObj, string aProperty)
+        private string getPrintJobParameter(List<PrintJobParametersValue> printJobParametersObj, string property)
         {
-            string ParamValue = "";
-
-            PrintJobParametersValue propertyFind = aPrintJobParametersObj.Find(x => (x.Property == aProperty));
+            string result = string.Empty;
+            PrintJobParametersValue propertyFind = printJobParametersObj.Find(x => (x.Property == property));
             if (propertyFind != null)
             {
-                ParamValue = propertyFind.Value == null ? "" : propertyFind.Value.ToString();
+                result = propertyFind.Value == null ? string.Empty : propertyFind.Value.ToString();
             }
-
-            return ParamValue;
+            return result;
         }
 
         /// <summary>
@@ -133,7 +197,7 @@ namespace PrintWindowsService
 
             foreach (JobOrders.JobOrdersValue joValue in jobOrders.JobOrdersObj)
             {
-                string PrintJobParametersUrl = Requests.CreateRequest(webServiceUrl, String.Format("v_PrintJobParameters?$filter=JobOrderID%20eq%20{0}%20&$select=Property,Value",
+                string PrintJobParametersUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_PrintJobParameters?$filter=JobOrderID%20eq%20{0}%20&$select=Property,Value",
                                                                       joValue.ID));
                 string PrintJobParameters = Requests.MakeRequest(PrintJobParametersUrl);
                 List<PrintJobParametersValue> PrintJobParametersObj = DeserializePrintJobParameters(PrintJobParameters);
@@ -144,18 +208,18 @@ namespace PrintWindowsService
                 List<EquipmentPropertyValue> EquipmentPropertyObj = null;
                 if (PrinterID != "")
                 {
-                    string EquipmentPropertyUrl = Requests.CreateRequest(webServiceUrl, String.Format("v_EquipmentProperty?$filter=EquipmentID%20eq%20{0}%20&$select=Property,Value",
+                    string EquipmentPropertyUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_EquipmentProperty?$filter=EquipmentID%20eq%20{0}%20&$select=Property,Value",
                                                                          PrinterID));
                     string EquipmentProperty = Requests.MakeRequest(EquipmentPropertyUrl);
                     EquipmentPropertyObj = DeserializeEquipmentProperty(EquipmentProperty);
                 }
 
-                string PrintPropertiesUrl = Requests.CreateRequest(webServiceUrl, String.Format("v_PrintProperties?$filter=MaterialLotID%20eq%20{0}&$select=TypeProperty,PropertyCode,Value",
+                string PrintPropertiesUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_PrintProperties?$filter=MaterialLotID%20eq%20{0}&$select=TypeProperty,PropertyCode,Value",
                                                                    MaterialLotID));
                 string PrintPropertiesResponse = Requests.MakeRequest(PrintPropertiesUrl);
                 List<PrintPropertiesValue> PrintPropertiesObj = DeserializePrintProperties(PrintPropertiesResponse);
 
-                string TemplateUrl = Requests.CreateRequest(webServiceUrl, String.Format("v_PrintFile?$filter=MaterialLotID%20eq%20{0}%20and%20Property%20eq%20%27{1}%27&$select=Data",
+                string TemplateUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_PrintFile?$filter=MaterialLotID%20eq%20{0}%20and%20Property%20eq%20%27{1}%27&$select=Data",
                                                             MaterialLotID, "TEMPLATE"));
                 string TemplateResponse = Requests.MakeRequest(TemplateUrl);
                 List<LabelTemplateValue> LabelTemplateObj = DeserializeLabelTemplate(TemplateResponse);

@@ -10,7 +10,7 @@ namespace CommonEventSender
     /// <summary>
     /// Event for a grant in WMI
     /// </summary>
-    public class senderMonitorEvent
+    public class SenderMonitorEvent
     {
         private string message;
         private EventLogEntryType eventType;
@@ -38,23 +38,23 @@ namespace CommonEventSender
             get { return eventTime; }
         }
 
-        public senderMonitorEvent(EventLog cEventLog, string cMessage, EventLogEntryType cEventType)
+        public SenderMonitorEvent(EventLog eventLog, string message, EventLogEntryType eventType)
         {
-            message = cMessage;
-            eventType = cEventType;
+            this.message = message;
+            this.eventType = eventType;
             eventTime = DateTime.Now;
-            if (cEventLog != null)
+            if (eventLog != null)
             {
-                cEventLog.WriteEntry(cMessage, cEventType);
+                eventLog.WriteEntry(message, eventType);
             }
         }
 
         /// <summary>
         /// Create and fire event
         /// </summary>
-        public static void sendMonitorEvent(EventLog cEventLog, string cMessage, EventLogEntryType cEventType)
+        public static void sendMonitorEvent(EventLog eventLog, string message, EventLogEntryType eventType)
         {
-            senderMonitorEvent MonitorEvent = new senderMonitorEvent(cEventLog, cMessage, cEventType);
+            SenderMonitorEvent MonitorEvent = new SenderMonitorEvent(eventLog, message, eventType);
             Instrumentation.Fire(MonitorEvent);
         }
     }
@@ -161,29 +161,39 @@ namespace PrintWindowsService
             set { prPrintedLabelsCount = value; }
         }
 
-        public PrintServiceProductInfo(string cAppName,
-                                       string cComputerName,
-                                       string cVersion,
-                                       DateTime cStartTime,
-                                       int cPrintTaskFrequencyInSeconds,
-                                       int cPingTimeoutInSeconds,
-                                       string cOdataServiceUrl)
+        /// <summary>	Constructor. </summary>
+        ///
+        /// <param name="appName">					   	Name of the application. </param>
+        /// <param name="computerName">			   	Name of the computer. </param>
+        /// <param name="version">					   	The version. </param>
+        /// <param name="startTime">				   	The start time. </param>
+        /// <param name="printTaskFrequencyInSeconds">	The print task frequency in seconds. </param>
+        /// <param name="pingTimeoutInSeconds">	   	The ping timeout in seconds. </param>
+        /// <param name="odataServiceUrl">			   	URL of the odata service. </param>
+        public PrintServiceProductInfo(string appName,
+                                       string computerName,
+                                       string version,
+                                       DateTime startTime,
+                                       int printTaskFrequencyInSeconds,
+                                       int pingTimeoutInSeconds,
+                                       string odataServiceUrl)
         {
-            prAppName = cAppName;
-            prComputerName = cComputerName;
-            prVersion = cVersion;
-            prStartTime = cStartTime;
-            prPrintTaskFrequencyInSeconds = cPrintTaskFrequencyInSeconds;
-            prPingTimeoutInSeconds = cPingTimeoutInSeconds;
-            prOdataServiceUrl = cOdataServiceUrl;
+            prAppName = appName;
+            prComputerName = computerName;
+            prVersion = version;
+            prStartTime = startTime;
+            prPrintTaskFrequencyInSeconds = printTaskFrequencyInSeconds;
+            prPingTimeoutInSeconds = pingTimeoutInSeconds;
+            prOdataServiceUrl = odataServiceUrl;
 
             LastActivityTime = new DateTime(0);
-            LastServiceError = "";
+			LastServiceError = string.Empty;
             PrintedLabelsCount = 0;
 
             PublishInfo();
         }
 
+        /// <summary>	Publish information. </summary>
         public void PublishInfo()
         {
             Instrumentation.Publish(this);
@@ -283,6 +293,14 @@ namespace KEPServerSenderService
             set { prSendCommandsCount = value; }
         }
 
+        /// <summary>	Constructor. </summary>
+        ///
+        /// <param name="cAppName">						 	Name of the application. </param>
+        /// <param name="cComputerName">				 	Name of the computer. </param>
+        /// <param name="cVersion">						 	The version. </param>
+        /// <param name="cStartTime">					 	The start time. </param>
+        /// <param name="cSendCommandFrequencyInSeconds">	The send command frequency in seconds. </param>
+        /// <param name="cOdataServiceUrl">				 	URL of the odata service. </param>
         public KEPSenderServiceProductInfo(string cAppName,
                                            string cComputerName,
                                            string cVersion,
@@ -298,12 +316,13 @@ namespace KEPServerSenderService
             prOdataServiceUrl = cOdataServiceUrl;
 
             LastActivityTime = new DateTime(0);
-            LastServiceError = "";
+            LastServiceError = string.Empty;
             SendCommandsCount = 0;
 
             PublishInfo();
         }
 
+        /// <summary>	Publish information. </summary>
         public void PublishInfo()
         {
             Instrumentation.Publish(this);

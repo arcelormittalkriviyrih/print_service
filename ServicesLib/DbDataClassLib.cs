@@ -27,7 +27,7 @@ namespace JobOrdersService
         /// </summary>
         public static string MakeRequest(string requestUrl)
         {
-            string responseText = "";
+			string responseText = string.Empty;
             HttpWebRequest request = WebRequest.Create(requestUrl) as HttpWebRequest;
             request.Credentials = CredentialCache.DefaultNetworkCredentials;
 #if (DEBUG)
@@ -36,7 +36,7 @@ namespace JobOrdersService
             using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
             {
                 if (response.StatusCode != HttpStatusCode.OK)
-                    throw new Exception(String.Format(
+                    throw new Exception(string.Format(
                     "Server error (HTTP {0}: {1}).",
                     response.StatusCode,
                     response.StatusDescription));
@@ -55,7 +55,7 @@ namespace JobOrdersService
         /// </summary>
         public static void updateJobStatus(string webServiceUrl, int aJobOrderID, string aActionState)
         {
-            string UpdateStatusUrl = Requests.CreateRequest(webServiceUrl, String.Format("JobOrder({0})",
+            string UpdateStatusUrl = Requests.CreateRequest(webServiceUrl, string.Format("JobOrder({0})",
                                                             aJobOrderID));
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(UpdateStatusUrl);
 
@@ -79,7 +79,7 @@ namespace JobOrdersService
             using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
             {
                 if (response.StatusCode != HttpStatusCode.NoContent)
-                    throw new Exception(String.Format(
+                    throw new Exception(string.Format(
                     "Server error (HTTP {0}: {1}).",
                     response.StatusCode,
                     response.StatusDescription));
@@ -99,36 +99,71 @@ namespace JobOrdersService
     /// </summary>
     public class JobOrders
     {
+        /// <summary>	URL of the web service. </summary>
         private string webServiceUrl;
+        /// <summary>	The job orders object. </summary>
         private List<JobOrdersValue> jobOrdersObj = null;
 
+        /// <summary>	Gets the job orders object. </summary>
+        ///
+        /// <value>	The job orders object. </value>
         public List<JobOrdersValue> JobOrdersObj
         {
             get { return jobOrdersObj; }
         }
 
-        public JobOrders(string aWebServiceUrl, string WorkType, string DispatchStatus)
+        /// <summary>	Constructor. </summary>
+        ///
+        /// <param name="webServiceUrl">	URL of the web service. </param>
+        /// <param name="workType">		 	Type of the work. </param>
+        /// <param name="dispatchStatus">	The dispatch status. </param>
+        public JobOrders(string webServiceUrl, string workType, string dispatchStatus)
         {
-            webServiceUrl = aWebServiceUrl;
-            string JobOrdersUrl = Requests.CreateRequest(webServiceUrl, "v_JobOrders?$filter=WorkType%20eq%20%27" + WorkType + "%27%20and%20DispatchStatus%20eq%20%27" + DispatchStatus + "%27&$select=ID,Command,CommandRule");
+            this.webServiceUrl = webServiceUrl;
+            string JobOrdersUrl = Requests.CreateRequest(webServiceUrl, "v_JobOrders?$filter=WorkType%20eq%20%27" + workType + "%27%20and%20DispatchStatus%20eq%20%27" + dispatchStatus + "%27&$select=ID,Command,CommandRule");
             string JobOrdersSerial = Requests.MakeRequest(JobOrdersUrl);
             jobOrdersObj = DeserializeJobOrders(JobOrdersSerial);
         }
 
+        /// <summary>	A job orders value. </summary>
         public class JobOrdersValue
         {
+            /// <summary>	Gets or sets the identifier. </summary>
+            ///
+            /// <value>	The identifier. </value>
             public int ID { get; set; }
+
+            /// <summary>	Gets or sets the command. </summary>
+            ///
+            /// <value>	The command. </value>
             public string Command { get; set; }
+
+            /// <summary>	Gets or sets the command rule. </summary>
+            ///
+            /// <value>	The command rule. </value>
             public object CommandRule { get; set; }
         }
 
+        /// <summary>	A job orders root. </summary>
         private class JobOrdersRoot
         {
+            /// <summary>	Gets or sets the metadata. </summary>
+            ///
+            /// <value>	The metadata. </value>
             [JsonProperty("odata.metadata")]
             public string Metadata { get; set; }
+
+            /// <summary>	Gets or sets the value. </summary>
+            ///
+            /// <value>	The value. </value>
             public List<JobOrdersValue> value { get; set; }
         }
 
+        /// <summary>	Deserialize job orders. </summary>
+        ///
+        /// <param name="json">	The JSON. </param>
+        ///
+        /// <returns>	A List&lt;JobOrdersValue&gt; </returns>
         private List<JobOrdersValue> DeserializeJobOrders(string json)
         {
             JobOrdersRoot prRoot = JsonConvert.DeserializeObject<JobOrdersRoot>(json);
