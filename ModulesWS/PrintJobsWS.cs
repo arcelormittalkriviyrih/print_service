@@ -26,7 +26,7 @@ namespace PrintWindowsService
         /// <summary>
         /// The name of the system event log used by this service.
         /// </summary>
-        private const string cSystemEventLogName = "ArcelorMittal.PrintService.Log";
+        private const string cSystemEventLogName = "AM.PrintService.ArcelorMittal.Log";
 
         /// <summary>
         /// The name of the configuration parameter for the print task frequency in seconds.
@@ -382,11 +382,15 @@ namespace PrintWindowsService
         public string getLabelParameter(string typeProperty, string propertyCode)
         {
             string result = string.Empty;
-            PrintPropertiesValue propertyFind = tableLabelProperty.Find(x => (x.TypeProperty == typeProperty) & (x.PropertyCode == propertyCode));
-            if (propertyFind != null)
+            if (tableLabelProperty != null)
             {
-                result = propertyFind.Value;
+                PrintPropertiesValue propertyFind = tableLabelProperty.Find(x => (x.TypeProperty == typeProperty) & (x.PropertyCode == propertyCode));
+                if (propertyFind != null)
+                {
+                    result = propertyFind.Value;
+                }
             }
+
             return result;
         }
         /// <summary>
@@ -394,12 +398,16 @@ namespace PrintWindowsService
         /// </summary>
         public string getEquipmentProperty(string property)
         {
-			string result = string.Empty;
-            EquipmentPropertyValue propertyFind = tableEquipmentProperty.Find(x => (x.Property == property));
-            if (propertyFind != null)
+            string result = string.Empty;
+            if (tableEquipmentProperty != null)
             {
-				result = propertyFind.Value == null ? string.Empty : propertyFind.Value.ToString();
+                EquipmentPropertyValue propertyFind = tableEquipmentProperty.Find(x => (x.Property == property));
+                if (propertyFind != null)
+                {
+                    result = propertyFind.Value == null ? string.Empty : propertyFind.Value.ToString();
+                }
             }
+        
 			return result;
         }
     }
