@@ -338,7 +338,7 @@ namespace PrintWindowsService
         /// </summary>
         public bool isExistsTemplate
         {
-            get { return xlFile.Length > 0; }
+            get { return (xlFile == null ? false : xlFile.Length > 0); }
         }
 
         /// <summary>	Constructor. </summary>
@@ -355,8 +355,8 @@ namespace PrintWindowsService
                              byte[] xlFile,
                              List<EquipmentPropertyValue> tableEquipmentProperty,
                              List<PrintPropertiesValue> tableLabelProperty) : base(jobOrderID, 
-                                                                                    command, 
-                                                                                    commandRule)
+                                                                                   command, 
+                                                                                   commandRule)
         {
             this.xlFile = xlFile;
             this.tableEquipmentProperty = tableEquipmentProperty;
@@ -367,7 +367,7 @@ namespace PrintWindowsService
         /// </summary>
         public void prepareTemplate(string excelTemplateFile)
         {
-            if (xlFile.Length > 0)
+            if (isExistsTemplate)
             {
                 using (FileStream fs = new FileStream(excelTemplateFile, FileMode.Create))
                 {
