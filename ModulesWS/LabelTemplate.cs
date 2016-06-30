@@ -23,7 +23,7 @@ namespace PrintWindowsService
         {
             spreadSheet = SpreadsheetDocument.Open(templateName, true);
             workbookpart = spreadSheet.WorkbookPart;
-            worksheetParams = workbookpart.Workbook.Descendants<Sheet>().First(s => (s.SheetId == "2"));
+            worksheetParams = workbookpart.Workbook.Descendants<Sheet>().First(s => (s.Id == "rId2"));
             worksheetPartParams = (WorksheetPart)(workbookpart.GetPartById(worksheetParams.Id));
         }
 
