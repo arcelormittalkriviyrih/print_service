@@ -284,7 +284,7 @@ namespace PrintWindowsService
                     else
                     {
                         printState = "Failed";
-                        lLastError = "Excel template is empty";
+                        lLastError = string.Format("Excel template is empty. JobOrderID: {0}", job.JobOrderID);
                         SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
                         wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                     }
