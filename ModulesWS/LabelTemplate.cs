@@ -145,7 +145,7 @@ namespace PrintWindowsService
 			WorksheetPart wsPartFirst = (WorksheetPart)(workbookPart.GetPartById(workbookPart.Workbook.Descendants<Sheet>().First(s => (s.SheetId == "1")).Id));
             foreach (Cell refCell in wsPartFirst.Worksheet.Descendants<Cell>())
             {
-                if ((refCell.DataType == null) & (refCell.CellFormula != null))
+                if ((refCell.DataType == null) && (refCell.CellFormula != null))
                 {
                     refCell.CellValue.Remove();
                 }
@@ -196,16 +196,16 @@ namespace PrintWindowsService
                     {*/
                     //these rows for other params
 
-					if (GetCellValue(refCellB) == "FactoryNumber")
+                    string PropertyValue = jobProps.getLabelParameter(GetCellValue(refCellA), GetCellValue(refCellB));
+                    if (GetCellValue(refCellB) == "FactoryNumber")
 					{
-						string QRvalue = jobProps.getLabelParameter(GetCellValue(refCellA), GetCellValue(refCellB));
-						if (!string.IsNullOrEmpty(QRvalue))
+						if (!string.IsNullOrEmpty(PropertyValue))
 						{
-							ProcessFactoryNumber(QRvalue);
+							ProcessFactoryNumber(PropertyValue);
 						}
 					}
 
-                    int index = InsertSharedStringItem(jobProps.getLabelParameter(GetCellValue(refCellA), GetCellValue(refCellB)), shareStringPart);
+                    int index = InsertSharedStringItem(PropertyValue, shareStringPart);
                     refCellD.CellValue = new CellValue(index.ToString());
                     refCellD.DataType = new EnumValue<CellValues>(CellValues.SharedString);
                     //}
@@ -246,41 +246,45 @@ namespace PrintWindowsService
 			//}
 
 			string tempImageFileName = System.IO.Path.GetTempFileName();
-			if (!string.IsNullOrEmpty(factoryNumberValue))
-			{
-				//3 - Generate DataMatrix Code from FactoryNumber value
-				var enc = new DataMatrix.net.DmtxImageEncoder();
-				int dotSize = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cDataMatrixDotSizeName]);
-				System.Drawing.Bitmap dataMatrixCode = enc.EncodeImage(factoryNumberValue, dotSize); //dot size 4 (4x4 pixels one point)
-				dataMatrixCode.Save(tempImageFileName, System.Drawing.Imaging.ImageFormat.Png);
+            if (!string.IsNullOrEmpty(factoryNumberValue))
+            {
+                //3 - Generate DataMatrix Code from FactoryNumber value
+                var enc = new DataMatrix.net.DmtxImageEncoder();
+                int dotSize = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cDataMatrixDotSizeName]);
+                System.Drawing.Bitmap dataMatrixCode = enc.EncodeImage(factoryNumberValue, dotSize); //dot size 4 (4x4 pixels one point)
+                dataMatrixCode.Save(tempImageFileName, System.Drawing.Imaging.ImageFormat.Png);
 
-				//4 - Find all Images with name QRCode
-				List<string> imagePartIds = new List<string>();
-				WorksheetPart wsPart1 = (WorksheetPart)(workbookPart.GetPartById(sheet1.Id));
-				string replaceImageSearchName = System.Configuration.ConfigurationManager.AppSettings[cReplaceImageSearchNameName];
-				foreach (var element in wsPart1.DrawingsPart.WorksheetDrawing.Elements<TwoCellAnchor>())
-				{
-					foreach (var picture in element.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.Picture>())
-					{
-						foreach (var picProp in picture.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.NonVisualPictureProperties>())
-						{
-							foreach (var drawProp in picProp.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.NonVisualDrawingProperties>())
-							{
-								if (drawProp.Name.Value.StartsWith(replaceImageSearchName, true, System.Globalization.CultureInfo.InvariantCulture))
-								{
-									foreach (var blipFill in picture.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.BlipFill>())
-									{
-										foreach (var blip in blipFill.Elements<DocumentFormat.OpenXml.Drawing.Blip>())
-										{
-											if (!string.IsNullOrEmpty(blip.Embed.Value) && !imagePartIds.Contains(blip.Embed.Value))
-												imagePartIds.Add(blip.Embed.Value);
-										}
-									}
-								}
-							}
-						}
-					}
-				}
+                //4 - Find all Images with name QRCode
+                List<string> imagePartIds = new List<string>();
+                WorksheetPart wsPart1 = (WorksheetPart)(workbookPart.GetPartById(sheet1.Id));
+                string replaceImageSearchName = System.Configuration.ConfigurationManager.AppSettings[cReplaceImageSearchNameName];
+                if (wsPart1 != null && wsPart1.DrawingsPart!=null && wsPart1.DrawingsPart.WorksheetDrawing!=null)
+                {
+                    foreach (var element in wsPart1.DrawingsPart.WorksheetDrawing.Elements<TwoCellAnchor>())
+                    {
+                        foreach (var picture in element.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.Picture>())
+                        {
+                            foreach (var picProp in picture.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.NonVisualPictureProperties>())
+                            {
+                                foreach (var drawProp in picProp.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.NonVisualDrawingProperties>())
+                                {
+                                    if (drawProp.Name.Value.StartsWith(replaceImageSearchName, true, System.Globalization.CultureInfo.InvariantCulture))
+                                    {
+                                        foreach (var blipFill in picture.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.BlipFill>())
+                                        {
+                                            foreach (var blip in blipFill.Elements<DocumentFormat.OpenXml.Drawing.Blip>())
+                                            {
+                                                if (!string.IsNullOrEmpty(blip.Embed.Value) && !imagePartIds.Contains(blip.Embed.Value))
+                                                    imagePartIds.Add(blip.Embed.Value);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+             
 
 				//5 - Replace all QRCode images
 				foreach (var imagePartId in imagePartIds)

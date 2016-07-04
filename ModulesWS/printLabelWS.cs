@@ -17,6 +17,7 @@ namespace PrintWindowsService
         public static EventLog eventLog;
         public static string ExcelTemplateFile;
         public static string PDFTemplateFile;
+        public static string BMPTemplateFile;
         public static string xlsConverterPath;
         public static string ghostScriptPath;
         public static string SMTPHost;
@@ -28,7 +29,7 @@ namespace PrintWindowsService
         public static bool PrintTemplate(PrintJobProps jobProps)
         {
             //перед печатью если задан IP сделать пинг
-            if ((pingTimeoutInSeconds > 0) & (jobProps.IpAddress != ""))
+            if ((pingTimeoutInSeconds > 0) && (jobProps.IpAddress != ""))
             {
                 System.Net.NetworkInformation.Ping printerPing = new System.Net.NetworkInformation.Ping();
                 System.Net.NetworkInformation.PingReply printerReply = printerPing.Send(jobProps.IpAddress, pingTimeoutInSeconds);
@@ -40,9 +41,9 @@ namespace PrintWindowsService
             }
 
             Boolean boolPrintLabel = false;
-            if (PreparePDF(jobProps))
+            if (PrepareTemplate(jobProps, false))
             {
-                boolPrintLabel = PrintPDF(jobProps.PrinterName);
+                boolPrintLabel = PrintBMP(jobProps.PrinterName);
             }
             else
             {
@@ -61,6 +62,31 @@ namespace PrintWindowsService
             File.Delete(PDFTemplateFile);
             ProcessStartInfo startInfo = new ProcessStartInfo();
             startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + PDFTemplateFile + "\"";
+            startInfo.FileName = xlsConverterPath;
+            startInfo.UseShellExecute = false;
+
+            startInfo.RedirectStandardError = true;
+            startInfo.RedirectStandardOutput = true;
+            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+
+            Process process = null;
+            process = Process.Start(startInfo);
+            process.WaitForExit(30000);
+            if (process.HasExited == false)
+                process.Kill();
+            int exitcode = process.ExitCode;
+            process.Close();
+            return exitcode == 0;
+        }
+
+        /// <summary>	Converts this object to a BMP. </summary>
+        ///
+        /// <returns>	true if it succeeds, false if it fails. </returns>
+        private static bool ConvertToBMP()
+        {
+            File.Delete(PDFTemplateFile);
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + BMPTemplateFile + "\"";
             startInfo.FileName = xlsConverterPath;
             startInfo.UseShellExecute = false;
 
@@ -104,12 +130,44 @@ namespace PrintWindowsService
             return exitcode == 0;
         }
 
-        /// <summary>	Prepare PDF. </summary>
+        /// <summary>	Print BMP. </summary>
+        ///
+        /// <param name="printerName">	Name of the printer. </param>
+        ///
+        /// <returns>	true if it succeeds, false if it fails. </returns>
+        private static bool PrintBMP(string printerName)
+        {
+            try
+            {
+                ProcessStartInfo info = new ProcessStartInfo(BMPTemplateFile);
+                info.Arguments = "\"" + printerName + "\"";
+                info.CreateNoWindow = true;
+                info.WindowStyle = ProcessWindowStyle.Hidden;
+                info.UseShellExecute = true;
+                info.Verb = "PrintTo";
+                Process process = null;
+                process = Process.Start(info);
+
+                process.WaitForExit(30000);
+                if (process.HasExited == false)
+                    process.Kill();
+                int exitcode = process.ExitCode;
+                process.Close();
+                return exitcode == 0;
+            }
+            catch (Exception ex)
+            {
+                SenderMonitorEvent.sendMonitorEvent(eventLog, "Print BMP error: " + ex.ToString(), EventLogEntryType.Error);
+                return false;
+            }
+        }
+
+        /// <summary>	Prepare document for print. </summary>
         ///
         /// <param name="jobProps">	The job properties. </param>
         ///
         /// <returns>	true if it succeeds, false if it fails. </returns>
-        private static bool PreparePDF(PrintJobProps jobProps)
+        private static bool PrepareTemplate(PrintJobProps jobProps, bool isPDF)
         {
             Boolean boolConvertLabel = false;
             LabelTemplate lTemplate = new LabelTemplate(ExcelTemplateFile);
@@ -125,7 +183,10 @@ namespace PrintWindowsService
 
             try
             {
-                boolConvertLabel = ConvertToPDF();
+                if (isPDF)
+                   boolConvertLabel = ConvertToPDF();
+                else
+                   boolConvertLabel = ConvertToBMP();
             }
             catch (Exception ex)
             {
@@ -186,7 +247,7 @@ namespace PrintWindowsService
         public static bool EmailTemplate(PrintJobProps jobProps)
         {
             Boolean boolEmailLabel = false;
-            if (PreparePDF(jobProps))
+            if (PrepareTemplate(jobProps, true))
             {
                 boolEmailLabel = EmailPDF(jobProps.CommandRule);
             }
