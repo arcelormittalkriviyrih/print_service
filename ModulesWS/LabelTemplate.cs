@@ -35,9 +35,9 @@ namespace PrintWindowsService
         public LabelTemplate(string templateName)
         {
             spreadSheet = SpreadsheetDocument.Open(templateName, true);
-            workbookPart = spreadSheet.WorkbookPart;
+			workbookPart = spreadSheet.WorkbookPart;
             worksheetParams = workbookPart.Workbook.Descendants<Sheet>().First(s => (s.Id == "rId2"));
-            worksheetPartParams = (WorksheetPart)(workbookPart.GetPartById(worksheetParams.Id));
+			worksheetPartParams = (WorksheetPart)(workbookPart.GetPartById(worksheetParams.Id));
         }
 
         /// <summary>	Inserts a shared string item. </summary>
@@ -185,29 +185,29 @@ namespace PrintWindowsService
 
                     if (!string.IsNullOrEmpty(PropertyValue))
                     {
-                        Cell refCellC = CheckEmptyCell(rowParam, refCellB, "C");
-                        Cell refCellD = CheckEmptyCell(rowParam, refCellC, "D");
+                    Cell refCellC = CheckEmptyCell(rowParam, refCellB, "C");
+                    Cell refCellD = CheckEmptyCell(rowParam, refCellC, "D");
 
-                        if (GetCellValue(refCellB) == "FactoryNumber")
-                        {
+					if (GetCellValue(refCellB) == "FactoryNumber")
+					{
                             if (!string.IsNullOrEmpty(PropertyValue))
-                            {
+						{
                                 ProcessFactoryNumber(PropertyValue);
-                            }
-                        }
+						}
+					}
 
 
                         int index = InsertSharedStringItem(PropertyValue, shareStringPart);
-                        refCellD.CellValue = new CellValue(index.ToString());
-                        refCellD.DataType = new EnumValue<CellValues>(CellValues.SharedString);
-                    }
+                    refCellD.CellValue = new CellValue(index.ToString());
+                    refCellD.DataType = new EnumValue<CellValues>(CellValues.SharedString);
                 }
+            }
             }
             worksheetPartParams.Worksheet.Save();
             //defective converting? RecalcRefCellValues();
             workbookPart.Workbook.CalculationProperties.ForceFullCalculation = true;
             workbookPart.Workbook.CalculationProperties.FullCalculationOnLoad = true;
-            workbookPart.Workbook.Save();
+			workbookPart.Workbook.Save();
             spreadSheet.Close();
         }
 
@@ -241,45 +241,45 @@ namespace PrintWindowsService
 			//}
 
 			string tempImageFileName = System.IO.Path.GetTempFileName();
-            if (!string.IsNullOrEmpty(factoryNumberValue))
-            {
-                //3 - Generate DataMatrix Code from FactoryNumber value
-                var enc = new DataMatrix.net.DmtxImageEncoder();
-                int dotSize = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cDataMatrixDotSizeName]);
-                System.Drawing.Bitmap dataMatrixCode = enc.EncodeImage(factoryNumberValue, dotSize); //dot size 4 (4x4 pixels one point)
-                dataMatrixCode.Save(tempImageFileName, System.Drawing.Imaging.ImageFormat.Png);
+			if (!string.IsNullOrEmpty(factoryNumberValue))
+			{
+				//3 - Generate DataMatrix Code from FactoryNumber value
+				var enc = new DataMatrix.net.DmtxImageEncoder();
+				int dotSize = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cDataMatrixDotSizeName]);
+				System.Drawing.Bitmap dataMatrixCode = enc.EncodeImage(factoryNumberValue, dotSize, 0/*margin*/); //dot size 4 (4x4 pixels one point)
+				dataMatrixCode.Save(tempImageFileName, System.Drawing.Imaging.ImageFormat.Png);
 
-                //4 - Find all Images with name QRCode
-                List<string> imagePartIds = new List<string>();
-                WorksheetPart wsPart1 = (WorksheetPart)(workbookPart.GetPartById(sheet1.Id));
-                string replaceImageSearchName = System.Configuration.ConfigurationManager.AppSettings[cReplaceImageSearchNameName];
+				//4 - Find all Images with name QRCode
+				List<string> imagePartIds = new List<string>();
+				WorksheetPart wsPart1 = (WorksheetPart)(workbookPart.GetPartById(sheet1.Id));
+				string replaceImageSearchName = System.Configuration.ConfigurationManager.AppSettings[cReplaceImageSearchNameName];
                 if (wsPart1 != null && wsPart1.DrawingsPart!=null && wsPart1.DrawingsPart.WorksheetDrawing!=null)
                 {
-                    foreach (var element in wsPart1.DrawingsPart.WorksheetDrawing.Elements<TwoCellAnchor>())
-                    {
-                        foreach (var picture in element.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.Picture>())
-                        {
-                            foreach (var picProp in picture.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.NonVisualPictureProperties>())
-                            {
-                                foreach (var drawProp in picProp.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.NonVisualDrawingProperties>())
-                                {
-                                    if (drawProp.Name.Value.StartsWith(replaceImageSearchName, true, System.Globalization.CultureInfo.InvariantCulture))
-                                    {
-                                        foreach (var blipFill in picture.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.BlipFill>())
-                                        {
-                                            foreach (var blip in blipFill.Elements<DocumentFormat.OpenXml.Drawing.Blip>())
-                                            {
-                                                if (!string.IsNullOrEmpty(blip.Embed.Value) && !imagePartIds.Contains(blip.Embed.Value))
-                                                    imagePartIds.Add(blip.Embed.Value);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+				foreach (var element in wsPart1.DrawingsPart.WorksheetDrawing.Elements<TwoCellAnchor>())
+				{
+					foreach (var picture in element.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.Picture>())
+					{
+						foreach (var picProp in picture.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.NonVisualPictureProperties>())
+						{
+							foreach (var drawProp in picProp.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.NonVisualDrawingProperties>())
+							{
+								if (drawProp.Name.Value.StartsWith(replaceImageSearchName, true, System.Globalization.CultureInfo.InvariantCulture))
+								{
+									foreach (var blipFill in picture.Elements<DocumentFormat.OpenXml.Drawing.Spreadsheet.BlipFill>())
+									{
+										foreach (var blip in blipFill.Elements<DocumentFormat.OpenXml.Drawing.Blip>())
+										{
+											if (!string.IsNullOrEmpty(blip.Embed.Value) && !imagePartIds.Contains(blip.Embed.Value))
+												imagePartIds.Add(blip.Embed.Value);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
                 }
-             
+
 
 				//5 - Replace all QRCode images
 				foreach (var imagePartId in imagePartIds)
@@ -290,7 +290,7 @@ namespace PrintWindowsService
 						imagePart.FeedData(fileStream);
 					}
 				}
-            }
+			}
 
 			//Clear temp image file
 			if (File.Exists(tempImageFileName))
