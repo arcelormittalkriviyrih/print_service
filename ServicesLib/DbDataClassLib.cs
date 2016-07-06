@@ -121,6 +121,7 @@ namespace JobOrdersService
         {
             this.webServiceUrl = webServiceUrl;
             string JobOrdersUrl = Requests.CreateRequest(webServiceUrl, "v_JobOrders?$filter=WorkType%20eq%20%27" + workType + "%27%20and%20DispatchStatus%20eq%20%27" + dispatchStatus + "%27&$select=ID,Command,CommandRule");
+            //test string JobOrdersUrl = Requests.CreateRequest(webServiceUrl, "v_JobOrders?$filter=ID%20eq%2040625&$select=ID,Command,CommandRule"); 
             string JobOrdersSerial = Requests.MakeRequest(JobOrdersUrl);
             jobOrdersObj = DeserializeJobOrders(JobOrdersSerial);
         }

@@ -180,21 +180,11 @@ namespace PrintWindowsService
                 else
                 {
                     Cell refCellB = CheckEmptyCell(rowParam, refCellA, "B");
-                    worksheetPartParams.Worksheet.Save();
+                    //worksheetPartParams.Worksheet.Save();
                     Cell refCellC = CheckEmptyCell(rowParam, refCellB, "C");
-                    worksheetPartParams.Worksheet.Save();
+                    //worksheetPartParams.Worksheet.Save();
                     Cell refCellD = CheckEmptyCell(rowParam, refCellC, "D");
-                    worksheetPartParams.Worksheet.Save();
-
-                    /*if (rowParam.RowIndex == 1)
-                    {
-                        //first row for quantity
-                        refCellC.CellValue = new CellValue(aJobProps.PrintQuantity);
-                        refCellC.DataType = new EnumValue<CellValues>(CellValues.Number);
-                    }
-                    else
-                    {*/
-                    //these rows for other params
+                    //worksheetPartParams.Worksheet.Save();
 
                     string PropertyValue = jobProps.getLabelParameter(GetCellValue(refCellA), GetCellValue(refCellB));
                     if (GetCellValue(refCellB) == "FactoryNumber")
@@ -205,12 +195,15 @@ namespace PrintWindowsService
 						}
 					}
 
-                    int index = InsertSharedStringItem(PropertyValue, shareStringPart);
-                    refCellD.CellValue = new CellValue(index.ToString());
-                    refCellD.DataType = new EnumValue<CellValues>(CellValues.SharedString);
-                    //}
+                    if (!string.IsNullOrEmpty(PropertyValue))
+                    {
+                        int index = InsertSharedStringItem(PropertyValue, shareStringPart);
+                        refCellD.CellValue = new CellValue(index.ToString());
+                        refCellD.DataType = new EnumValue<CellValues>(CellValues.SharedString);
+                    }
                 }
             }
+            worksheetPartParams.Worksheet.Save();
             RecalcRefCellValues();
 			workbookPart.Workbook.Save();
             spreadSheet.Close();
@@ -295,7 +288,7 @@ namespace PrintWindowsService
 						imagePart.FeedData(fileStream);
 					}
 				}
-			}
+            }
 
 			//Clear temp image file
 			if (File.Exists(tempImageFileName))
