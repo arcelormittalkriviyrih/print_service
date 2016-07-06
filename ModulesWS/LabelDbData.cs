@@ -189,9 +189,6 @@ namespace PrintWindowsService
         /// </summary>
         public void fillPrintJobData(List<PrintJobProps> resultData)
         {
-            /*string JobOrdersUrl = CreateRequest("v_JobOrders?$filter=WorkType%20eq%20%27Print%27%20and%20DispatchStatus%20eq%20%27ToPrint%27&$select=ID,Command,CommandRule");
-            string JobOrders = MakeRequest(JobOrdersUrl);
-            List<JobOrdersValue> JobOrdersObj = DeserializeJobOrders(JobOrders);*/
             JobOrders jobOrders = new JobOrders(webServiceUrl, "Print", "ToPrint");
 
             foreach (JobOrders.JobOrdersValue joValue in jobOrders.JobOrdersObj)
@@ -220,6 +217,7 @@ namespace PrintWindowsService
 
                 string TemplateUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_PrintFile?$filter=MaterialLotID%20eq%20{0}%20and%20Property%20eq%20%27{1}%27&$select=Data",
                                                             MaterialLotID, "TEMPLATE"));
+                //test string TemplateUrl = Requests.CreateRequest(webServiceUrl, "Files?$filter=ID%20eq%2068&$select=Data");
                 string TemplateResponse = Requests.MakeRequest(TemplateUrl);
                 List<LabelTemplateValue> LabelTemplateObj = DeserializeLabelTemplate(TemplateResponse);
                 byte[] XlFile = null;

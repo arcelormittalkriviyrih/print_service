@@ -5,7 +5,6 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using System.Collections.Generic;
 using DocumentFormat.OpenXml.Drawing.Spreadsheet;
-using DocumentFormat.OpenXml.Drawing;
 using System.IO;
 
 namespace PrintWindowsService
@@ -36,9 +35,9 @@ namespace PrintWindowsService
         public LabelTemplate(string templateName)
         {
             spreadSheet = SpreadsheetDocument.Open(templateName, true);
-			workbookPart = spreadSheet.WorkbookPart;
-			worksheetParams = workbookPart.Workbook.Descendants<Sheet>().First(s => (s.Id == "rId2"));
-			worksheetPartParams = (WorksheetPart)(workbookPart.GetPartById(worksheetParams.Id));
+            workbookPart = spreadSheet.WorkbookPart;
+            worksheetParams = workbookPart.Workbook.Descendants<Sheet>().First(s => (s.Id == "rId2"));
+            worksheetPartParams = (WorksheetPart)(workbookPart.GetPartById(worksheetParams.Id));
         }
 
         /// <summary>	Inserts a shared string item. </summary>
@@ -142,7 +141,11 @@ namespace PrintWindowsService
         /// <summary>	Calculates the reference cell values. </summary>
         private void RecalcRefCellValues()
         {
-			WorksheetPart wsPartFirst = (WorksheetPart)(workbookPart.GetPartById(workbookPart.Workbook.Descendants<Sheet>().First(s => (s.SheetId == "1")).Id));
+            Sheet sheet1 = workbookPart.Workbook.Descendants<Sheet>().First(s => (s.Id == "rId1"));
+            if (sheet1 == null)
+                return;
+
+            WorksheetPart wsPartFirst = (WorksheetPart)(workbookPart.GetPartById(sheet1.Id));
             foreach (Cell refCell in wsPartFirst.Worksheet.Descendants<Cell>())
             {
                 if ((refCell.DataType == null) && (refCell.CellFormula != null))
@@ -150,8 +153,6 @@ namespace PrintWindowsService
                     refCell.CellValue.Remove();
                 }
             }
-			workbookPart.Workbook.CalculationProperties.ForceFullCalculation = true;
-			workbookPart.Workbook.CalculationProperties.FullCalculationOnLoad = true;
             wsPartFirst.Worksheet.Save();
         }
 
@@ -180,23 +181,22 @@ namespace PrintWindowsService
                 else
                 {
                     Cell refCellB = CheckEmptyCell(rowParam, refCellA, "B");
-                    //worksheetPartParams.Worksheet.Save();
-                    Cell refCellC = CheckEmptyCell(rowParam, refCellB, "C");
-                    //worksheetPartParams.Worksheet.Save();
-                    Cell refCellD = CheckEmptyCell(rowParam, refCellC, "D");
-                    //worksheetPartParams.Worksheet.Save();
-
                     string PropertyValue = jobProps.getLabelParameter(GetCellValue(refCellA), GetCellValue(refCellB));
-                    if (GetCellValue(refCellB) == "FactoryNumber")
-					{
-						if (!string.IsNullOrEmpty(PropertyValue))
-						{
-							ProcessFactoryNumber(PropertyValue);
-						}
-					}
 
                     if (!string.IsNullOrEmpty(PropertyValue))
                     {
+                        Cell refCellC = CheckEmptyCell(rowParam, refCellB, "C");
+                        Cell refCellD = CheckEmptyCell(rowParam, refCellC, "D");
+
+                        if (GetCellValue(refCellB) == "FactoryNumber")
+                        {
+                            if (!string.IsNullOrEmpty(PropertyValue))
+                            {
+                                ProcessFactoryNumber(PropertyValue);
+                            }
+                        }
+
+
                         int index = InsertSharedStringItem(PropertyValue, shareStringPart);
                         refCellD.CellValue = new CellValue(index.ToString());
                         refCellD.DataType = new EnumValue<CellValues>(CellValues.SharedString);
@@ -204,8 +204,10 @@ namespace PrintWindowsService
                 }
             }
             worksheetPartParams.Worksheet.Save();
-            RecalcRefCellValues();
-			workbookPart.Workbook.Save();
+            //defective converting? RecalcRefCellValues();
+            workbookPart.Workbook.CalculationProperties.ForceFullCalculation = true;
+            workbookPart.Workbook.CalculationProperties.FullCalculationOnLoad = true;
+            workbookPart.Workbook.Save();
             spreadSheet.Close();
         }
 
