@@ -146,7 +146,7 @@ namespace PrintWindowsService
             PrintLabelWS.pingTimeoutInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPingTimeoutName]);
             PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
             PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
-            PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.emf";
+            PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";
             PrintLabelWS.xlsConverterPath = System.Configuration.ConfigurationManager.AppSettings[cXlsConverterPath];
             PrintLabelWS.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath];
             PrintLabelWS.SMTPHost = System.Configuration.ConfigurationManager.AppSettings[cSMTPHost];
