@@ -7,6 +7,7 @@ using System.Reflection;
 using CommonEventSender;
 using JobOrdersService;
 using JobPropsService;
+using Newtonsoft.Json;
 
 namespace PrintWindowsService
 {
@@ -238,6 +239,7 @@ namespace PrintWindowsService
             printTimer.Stop();
 
             string lLastError = string.Empty;
+            int lLastJobID = 0; 
             List<PrintJobProps> JobData = new List<PrintJobProps>();
             try
             {
@@ -247,6 +249,7 @@ namespace PrintWindowsService
 
                 foreach (PrintJobProps job in JobData)
                 {
+                    lLastJobID = job.JobOrderID;
                     if (job.isExistsTemplate)
                     {
                         PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label_"+ DateTime.Now.ToString("yyyyMMddHHmmssffff") + ".xlsx";
@@ -299,7 +302,15 @@ namespace PrintWindowsService
             }
             catch (Exception ex)
             {
-                lLastError = "Get data from DB. Error: " + ex.ToString();
+                string details = string.Empty;
+                if(ex is System.Net.WebException)
+                {
+                    var resp = new StreamReader((ex as System.Net.WebException).Response.GetResponseStream()).ReadToEnd();
+
+                    dynamic obj = JsonConvert.DeserializeObject(resp);
+                    details = obj.error.message;
+                }
+                lLastError = "Get data from DB. JobOrderID: "+ lLastJobID + " Error: " + ex.ToString() +" Details: "+ details;
                 SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
                 wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
             }
