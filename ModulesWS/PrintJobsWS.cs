@@ -145,7 +145,7 @@ namespace PrintWindowsService
             odataServiceUrl = System.Configuration.ConfigurationManager.AppSettings[cOdataService];
 
             PrintLabelWS.pingTimeoutInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPingTimeoutName]);
-            //PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
+            PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
             PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
             PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";
             PrintLabelWS.xlsConverterPath = System.Configuration.ConfigurationManager.AppSettings[cXlsConverterPath];
@@ -251,8 +251,7 @@ namespace PrintWindowsService
                 {
                     lLastJobID = job.JobOrderID;
                     if (job.isExistsTemplate)
-                    {
-                        PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label_"+ DateTime.Now.ToString("yyyyMMddHHmmssffff") + ".xlsx";
+                    {                        
                         job.prepareTemplate(PrintLabelWS.ExcelTemplateFile);
                         if (job.Command == "Print")
                         {
@@ -296,7 +295,24 @@ namespace PrintWindowsService
 
                     if (printState == "Done")
                     {
-                        Requests.updateJobStatus(odataServiceUrl, job.JobOrderID, printState);
+                        try
+                        {
+                            Requests.updateJobStatus(odataServiceUrl, job.JobOrderID, printState);
+                        }
+                        catch (Exception ex)
+                        {
+                            string details = string.Empty;
+                            if (ex is System.Net.WebException)
+                            {
+                                var resp = new StreamReader((ex as System.Net.WebException).Response.GetResponseStream()).ReadToEnd();
+
+                                dynamic obj = JsonConvert.DeserializeObject(resp);
+                                details = obj.error.message;
+                            }
+                            lLastError = "UpdateJobStatus Done failed for JobOrderID: " + lLastJobID + " Error: " + ex.ToString() + " Details: " + details;
+                            SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
+                            wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                        }
                     }
                 }
             }
