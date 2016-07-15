@@ -144,7 +144,7 @@ namespace PrintWindowsService
             odataServiceUrl = System.Configuration.ConfigurationManager.AppSettings[cOdataService];
 
             PrintLabelWS.pingTimeoutInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPingTimeoutName]);
-            PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
+            //PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
             PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
             PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";
             PrintLabelWS.xlsConverterPath = System.Configuration.ConfigurationManager.AppSettings[cXlsConverterPath];
@@ -249,6 +249,7 @@ namespace PrintWindowsService
                 {
                     if (job.isExistsTemplate)
                     {
+                        PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label_"+ DateTime.Now.ToString("yyyyMMddHHmmssffff") + ".xlsx";
                         job.prepareTemplate(PrintLabelWS.ExcelTemplateFile);
                         if (job.Command == "Print")
                         {
