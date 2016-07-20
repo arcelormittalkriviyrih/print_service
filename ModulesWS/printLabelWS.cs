@@ -59,24 +59,26 @@ namespace PrintWindowsService
         /// <returns>	true if it succeeds, false if it fails. </returns>
         private static bool ConvertToPDF()
         {
-            File.Delete(PDFTemplateFile);
-            ProcessStartInfo startInfo = new ProcessStartInfo();
-            startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + PDFTemplateFile + "\"";
-            startInfo.FileName = xlsConverterPath;
-            startInfo.UseShellExecute = false;
+            //File.Delete(PDFTemplateFile);
+            //ProcessStartInfo startInfo = new ProcessStartInfo();
+            //startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + PDFTemplateFile + "\"";
+            //startInfo.FileName = xlsConverterPath;
+            //startInfo.UseShellExecute = false;
 
-            startInfo.RedirectStandardError = true;
-            startInfo.RedirectStandardOutput = true;
-            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            //startInfo.RedirectStandardError = true;
+            //startInfo.RedirectStandardOutput = true;
+            //startInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
-            Process process = null;
-            process = Process.Start(startInfo);
-            process.WaitForExit(30000);
-            if (process.HasExited == false)
-                process.Kill();
-            int exitcode = process.ExitCode;
-            process.Close();
-            return exitcode == 0;
+            //Process process = null;
+            //process = Process.Start(startInfo);
+            //process.WaitForExit(30000);
+            //if (process.HasExited == false)
+            //    process.Kill();
+            //int exitcode = process.ExitCode;
+            //process.Close();
+            //return exitcode == 0;
+            xlsConverter.Program.Convert(ExcelTemplateFile, PDFTemplateFile);
+            return File.Exists(BMPTemplateFile);
         }
 
         /// <summary>	Converts this object to a BMP. </summary>
@@ -84,24 +86,26 @@ namespace PrintWindowsService
         /// <returns>	true if it succeeds, false if it fails. </returns>
         private static bool ConvertToBMP()
         {
-            File.Delete(PDFTemplateFile);
-            ProcessStartInfo startInfo = new ProcessStartInfo();
-            startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + BMPTemplateFile + "\"";
-            startInfo.FileName = xlsConverterPath;
-            startInfo.UseShellExecute = false;
+            //File.Delete(PDFTemplateFile);
+            //ProcessStartInfo startInfo = new ProcessStartInfo();
+            //startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + BMPTemplateFile + "\"";
+            //startInfo.FileName = xlsConverterPath;
+            //startInfo.UseShellExecute = false;
 
-            startInfo.RedirectStandardError = true;
-            startInfo.RedirectStandardOutput = true;
-            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            //startInfo.RedirectStandardError = true;
+            //startInfo.RedirectStandardOutput = true;
+            //startInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
-            Process process = null;
-            process = Process.Start(startInfo);
-            process.WaitForExit(30000);
-            if (process.HasExited == false)
-                process.Kill();
-            int exitcode = process.ExitCode;
-            process.Close();
-            return exitcode == 0;
+            //Process process = null;
+            //process = Process.Start(startInfo);
+            //process.WaitForExit(30000);
+            //if (process.HasExited == false)
+            //    process.Kill();
+            //int exitcode = process.ExitCode;
+            //process.Close();
+            //return exitcode == 0;
+            xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile);
+            return File.Exists(BMPTemplateFile);
         }
 
         /// <summary>	Print PDF. </summary>
