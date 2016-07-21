@@ -143,7 +143,8 @@ namespace PrintWindowsService
 		/// <returns>	true if it succeeds, false if it fails. </returns>
 		private static bool PrintZebra(string printerIpAddress, string width, string height, int JobOrderId, string printerNo)
 		{
-			bool result = true;
+            SenderMonitorEvent.sendMonitorEvent(eventLog, "Printing file...", EventLogEntryType.Information);
+            bool result = true;
 			ZebraPrinterConnection connection = null;
 			try
 			{
@@ -254,12 +255,13 @@ namespace PrintWindowsService
 		///
 		/// <returns>	true if it succeeds, false if it fails. </returns>
 		private static bool PrepareTemplate(PrintJobProps jobProps, bool isPDF)
-		{
-			Boolean boolConvertLabel = false;
+		{            
+            Boolean boolConvertLabel = false;
 			LabelTemplate lTemplate = new LabelTemplate(ExcelTemplateFile);
 			try
 			{
-				lTemplate.FillParamValues(jobProps);
+                SenderMonitorEvent.sendMonitorEvent(eventLog, "Fill template file...", EventLogEntryType.Information);
+                lTemplate.FillParamValues(jobProps);
 			}
 			catch (Exception ex)
 			{

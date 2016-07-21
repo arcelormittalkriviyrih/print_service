@@ -185,55 +185,63 @@ namespace PrintWindowsService
         }
 
         /// <summary>
-        /// Processing of input queue and generation of list of labels for printing
+        /// Get print jobs to process
         /// </summary>
-        public void fillPrintJobData(List<PrintJobProps> resultData)
+        public JobOrders getJobsToProcess()
         {
             JobOrders jobOrders = new JobOrders(webServiceUrl, "Print", "ToPrint");
+            return jobOrders;            
+        }
 
-            foreach (JobOrders.JobOrdersValue joValue in jobOrders.JobOrdersObj)
+        /// <summary>
+        /// Get job details
+        /// </summary>
+        public PrintJobProps getJobData(System.Diagnostics.EventLog EventLog, JobOrders.JobOrdersValue joValue)
+        {
+            string PrintJobParametersUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_PrintJobParameters?$filter=JobOrderID%20eq%20{0}%20&$select=Property,Value",
+                                                                                  joValue.ID));
+            string PrintJobParameters = Requests.MakeRequest(PrintJobParametersUrl);
+            List<PrintJobParametersValue> PrintJobParametersObj = DeserializePrintJobParameters(PrintJobParameters);
+            CommonEventSender.SenderMonitorEvent.sendMonitorEvent(EventLog, "Reading v_PrintJobParameters for job " + joValue.ID, System.Diagnostics.EventLogEntryType.Information);
+
+            string PrinterID = getPrintJobParameter(PrintJobParametersObj, "PrinterID");
+            string MaterialLotID = getPrintJobParameter(PrintJobParametersObj, "MaterialLotID");
+
+            List<EquipmentPropertyValue> EquipmentPropertyObj = null;
+            if (PrinterID != "")
             {
-                string PrintJobParametersUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_PrintJobParameters?$filter=JobOrderID%20eq%20{0}%20&$select=Property,Value",
-                                                                      joValue.ID));
-                string PrintJobParameters = Requests.MakeRequest(PrintJobParametersUrl);
-                List<PrintJobParametersValue> PrintJobParametersObj = DeserializePrintJobParameters(PrintJobParameters);
-
-                string PrinterID = getPrintJobParameter(PrintJobParametersObj, "PrinterID");
-                string MaterialLotID = getPrintJobParameter(PrintJobParametersObj, "MaterialLotID");
-
-                List<EquipmentPropertyValue> EquipmentPropertyObj = null;
-                if (PrinterID != "")
-                {
-                    string EquipmentPropertyUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_EquipmentProperty?$filter=EquipmentID%20eq%20{0}%20&$select=Property,Value",
-                                                                         PrinterID));
-                    string EquipmentProperty = Requests.MakeRequest(EquipmentPropertyUrl);
-                    EquipmentPropertyObj = DeserializeEquipmentProperty(EquipmentProperty);
-                }
-
-                string PrintPropertiesUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_PrintProperties?$filter=MaterialLotID%20eq%20{0}&$select=TypeProperty,PropertyCode,Value",
-                                                                   MaterialLotID));
-                string PrintPropertiesResponse = Requests.MakeRequest(PrintPropertiesUrl);
-                List<PrintPropertiesValue> PrintPropertiesObj = DeserializePrintProperties(PrintPropertiesResponse);
-
-                string TemplateUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_PrintFile?$filter=MaterialLotID%20eq%20{0}%20and%20Property%20eq%20%27{1}%27&$select=Data",
-                                                            MaterialLotID, "TEMPLATE"));
-                //test string TemplateUrl = Requests.CreateRequest(webServiceUrl, "Files?$filter=ID%20eq%2068&$select=Data");
-                string TemplateResponse = Requests.MakeRequest(TemplateUrl);
-                List<LabelTemplateValue> LabelTemplateObj = DeserializeLabelTemplate(TemplateResponse);
-                byte[] XlFile = null;
-
-                if (LabelTemplateObj.Count > 0)
-                {
-                    XlFile = LabelTemplateObj[0].Data;
-                }
-
-                resultData.Add(new PrintJobProps(joValue.ID,
-                                                 joValue.Command,
-                                                 (string)(joValue.CommandRule),
-                                                 XlFile,
-                                                 EquipmentPropertyObj,
-                                                 PrintPropertiesObj));
+                string EquipmentPropertyUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_EquipmentProperty?$filter=EquipmentID%20eq%20{0}%20&$select=Property,Value",
+                                                                     PrinterID));
+                string EquipmentProperty = Requests.MakeRequest(EquipmentPropertyUrl);
+                EquipmentPropertyObj = DeserializeEquipmentProperty(EquipmentProperty);
             }
+            CommonEventSender.SenderMonitorEvent.sendMonitorEvent(EventLog, "Reading v_EquipmentProperty for job " + joValue.ID, System.Diagnostics.EventLogEntryType.Information);
+
+            string PrintPropertiesUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_PrintProperties?$filter=MaterialLotID%20eq%20{0}&$select=TypeProperty,PropertyCode,Value",
+                                                               MaterialLotID));
+            string PrintPropertiesResponse = Requests.MakeRequest(PrintPropertiesUrl);
+            List<PrintPropertiesValue> PrintPropertiesObj = DeserializePrintProperties(PrintPropertiesResponse);
+            CommonEventSender.SenderMonitorEvent.sendMonitorEvent(EventLog, "Reading v_PrintProperties for job " + joValue.ID, System.Diagnostics.EventLogEntryType.Information);
+
+            string TemplateUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_PrintFile?$filter=MaterialLotID%20eq%20{0}%20and%20Property%20eq%20%27{1}%27&$select=Data",
+                                                        MaterialLotID, "TEMPLATE"));
+            //test string TemplateUrl = Requests.CreateRequest(webServiceUrl, "Files?$filter=ID%20eq%2068&$select=Data");
+            string TemplateResponse = Requests.MakeRequest(TemplateUrl);
+            List<LabelTemplateValue> LabelTemplateObj = DeserializeLabelTemplate(TemplateResponse);
+            CommonEventSender.SenderMonitorEvent.sendMonitorEvent(EventLog, "Reading v_PrintFile for job " + joValue.ID, System.Diagnostics.EventLogEntryType.Information);
+            byte[] XlFile = null;
+
+            if (LabelTemplateObj.Count > 0)
+            {
+                XlFile = LabelTemplateObj[0].Data;
+            }
+
+            return new PrintJobProps(joValue.ID,
+                                             joValue.Command,
+                                             (string)(joValue.CommandRule),
+                                             XlFile,
+                                             EquipmentPropertyObj,
+                                             PrintPropertiesObj);
         }
     }
 }

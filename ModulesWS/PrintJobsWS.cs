@@ -77,8 +77,8 @@ namespace PrintWindowsService
         private bool jobStarted = false;
         private string odataServiceUrl;
 
-		/// <summary>	The event log. </summary>
-		private EventLog eventLog;
+        /// <summary>	The event log. </summary>
+        private EventLog eventLog;
 
         #endregion
 
@@ -121,16 +121,16 @@ namespace PrintWindowsService
             }
         }
 
-		/// <summary>
-		/// Status of processing of queue
-		/// </summary>
-		public bool JobStarted
-		{
-			get
-			{
-				return jobStarted;
-			}
-		}
+        /// <summary>
+        /// Status of processing of queue
+        /// </summary>
+        public bool JobStarted
+        {
+            get
+            {
+                return jobStarted;
+            }
+        }
 
         #endregion
 
@@ -175,7 +175,7 @@ namespace PrintWindowsService
         /// <summary>
         /// Constructor that prevents a default instance of this class from being created.
         /// </summary>
-        ~ PrintJobs()
+        ~PrintJobs()
         {
             if (eventLog != null)
             {
@@ -239,94 +239,96 @@ namespace PrintWindowsService
             printTimer.Stop();
 
             string lLastError = string.Empty;
-            int lLastJobID = 0; 
+            int lLastJobID = 0;
             List<PrintJobProps> JobData = new List<PrintJobProps>();
             try
             {
                 string printState;
                 LabeldbData lDbData = new LabeldbData(odataServiceUrl);
-                lDbData.fillPrintJobData(JobData);
-
-                foreach (PrintJobProps job in JobData)
+                JobOrders jobsToProcess = lDbData.getJobsToProcess();
+                SenderMonitorEvent.sendMonitorEvent(EventLog, "Jobs to process: " + jobsToProcess.JobOrdersObj.Count, EventLogEntryType.Information);
+                foreach (JobOrders.JobOrdersValue jobVal in jobsToProcess.JobOrdersObj)
                 {
-                    lLastJobID = job.JobOrderID;
-                    if (job.isExistsTemplate)
-                    {                        
-                        job.prepareTemplate(PrintLabelWS.ExcelTemplateFile);
-                        if (job.Command == "Print")
+                    try
+                    {
+                        PrintJobProps job = lDbData.getJobData(EventLog, jobVal);
+                        lLastJobID = job.JobOrderID;
+                        if (job.isExistsTemplate)
                         {
-                            if (PrintLabelWS.PrintTemplate(job))
+                            SenderMonitorEvent.sendMonitorEvent(EventLog, "Prepare template file...", EventLogEntryType.Information);
+                            job.prepareTemplate(PrintLabelWS.ExcelTemplateFile);
+                            if (job.Command == "Print")
                             {
-                                printState = "Done";
-                                wmiProductInfo.LastActivityTime = DateTime.Now;
+                                if (PrintLabelWS.PrintTemplate(job))
+                                {
+                                    printState = "Done";
+                                    wmiProductInfo.LastActivityTime = DateTime.Now;
+                                }
+                                else
+                                {
+                                    printState = "Failed";
+                                }
+                                lLastError = string.Format("JobOrderID: {0}. Print to: {1}. Status: {2}", job.JobOrderID, job.PrinterName, printState);
                             }
                             else
                             {
-                                printState = "Failed";
+                                if (PrintLabelWS.EmailTemplate(job))
+                                {
+                                    printState = "Done";
+                                    wmiProductInfo.LastActivityTime = DateTime.Now;
+                                }
+                                else
+                                {
+                                    printState = "Failed";
+                                }
+                                lLastError = string.Format("JobOrderID: {0}. Mail to: {1}. Status: {2}", job.JobOrderID, job.CommandRule, printState);
                             }
-                            lLastError = string.Format("JobOrderID: {0}. Print to: {1}. Status: {2}", job.JobOrderID, job.PrinterName, printState);
+                            SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, printState == "Failed" ? EventLogEntryType.Error : EventLogEntryType.Information);
+                            if (printState == "Failed")
+                            {
+                                wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                            }
                         }
                         else
                         {
-                            if (PrintLabelWS.EmailTemplate(job))
-                            {
-                                printState = "Done";
-                                wmiProductInfo.LastActivityTime = DateTime.Now;
-                            }
-                            else
-                            {
-                                printState = "Failed";
-                            }
-                            lLastError = string.Format("JobOrderID: {0}. Mail to: {1}. Status: {2}", job.JobOrderID, job.CommandRule, printState);
-                        }
-                        SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, printState == "Failed" ? EventLogEntryType.Error : EventLogEntryType.Information);
-                        if (printState == "Failed")
-                        {
-                            wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
-                        }
-                    }
-                    else
-                    {
-                        printState = "Failed";
-                        lLastError = string.Format("Excel template is empty. JobOrderID: {0}", job.JobOrderID);
-                        SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
-                        wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
-                    }
-
-                    if (printState == "Done")
-                    {
-                        try
-                        {
-                            Requests.updateJobStatus(odataServiceUrl, job.JobOrderID, printState);
-                        }
-                        catch (Exception ex)
-                        {
-                            string details = string.Empty;
-                            if (ex is System.Net.WebException)
-                            {
-                                var resp = new StreamReader((ex as System.Net.WebException).Response.GetResponseStream()).ReadToEnd();
-
-                                dynamic obj = JsonConvert.DeserializeObject(resp);
-                                details = obj.error.message;
-                            }
-                            lLastError = "UpdateJobStatus Done failed for JobOrderID: " + lLastJobID + " Error: " + ex.ToString() + " Details: " + details;
+                            printState = "Failed";
+                            lLastError = string.Format("Excel template is empty. JobOrderID: {0}", job.JobOrderID);
                             SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
                             wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                         }
+
+                        if (printState == "Done")
+                        {
+                            Requests.updateJobStatus(odataServiceUrl, job.JobOrderID, printState);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        string details = string.Empty;
+                        if (ex is System.Net.WebException)
+                        {
+                            var resp = new StreamReader((ex as System.Net.WebException).Response.GetResponseStream()).ReadToEnd();
+
+                            dynamic obj = JsonConvert.DeserializeObject(resp);
+                            details = obj.error.message;
+                        }
+                        lLastError = "JobOrderID: " + lLastJobID + " Error: " + ex.ToString() + " Details: " + details;
+                        SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
+                        wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                     }
                 }
             }
             catch (Exception ex)
             {
                 string details = string.Empty;
-                if(ex is System.Net.WebException)
+                if (ex is System.Net.WebException)
                 {
                     var resp = new StreamReader((ex as System.Net.WebException).Response.GetResponseStream()).ReadToEnd();
 
                     dynamic obj = JsonConvert.DeserializeObject(resp);
                     details = obj.error.message;
                 }
-                lLastError = "Get data from DB. JobOrderID: "+ lLastJobID + " Error: " + ex.ToString() +" Details: "+ details;
+                lLastError = "Error getting jobs: " + ex.ToString() + " Details: " + details;
                 SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
                 wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
             }
@@ -364,21 +366,21 @@ namespace PrintWindowsService
             get { return getEquipmentProperty("PRINTER_IP"); }
         }
 
-		/// <summary>
-		/// Paper width in pixels
-		/// </summary>
-		public string PaperWidth
-		{
-			get { return getEquipmentProperty("PAPER_WIDTH"); }
-		}
+        /// <summary>
+        /// Paper width in pixels
+        /// </summary>
+        public string PaperWidth
+        {
+            get { return getEquipmentProperty("PAPER_WIDTH"); }
+        }
 
-		/// <summary>
-		/// Paper height in pixels
-		/// </summary>
-		public string PaperHeight
-		{
-			get { return getEquipmentProperty("PAPER_HEIGHT"); }
-		}
+        /// <summary>
+        /// Paper height in pixels
+        /// </summary>
+        public string PaperHeight
+        {
+            get { return getEquipmentProperty("PAPER_HEIGHT"); }
+        }
 
         /// <summary>
 		/// Printer NO
@@ -409,8 +411,8 @@ namespace PrintWindowsService
                              string commandRule,
                              byte[] xlFile,
                              List<EquipmentPropertyValue> tableEquipmentProperty,
-                             List<PrintPropertiesValue> tableLabelProperty) : base(jobOrderID, 
-                                                                                   command, 
+                             List<PrintPropertiesValue> tableLabelProperty) : base(jobOrderID,
+                                                                                   command,
                                                                                    commandRule)
         {
             this.xlFile = xlFile;
@@ -462,8 +464,8 @@ namespace PrintWindowsService
                     result = propertyFind.Value == null ? string.Empty : propertyFind.Value.ToString();
                 }
             }
-        
-			return result;
+
+            return result;
         }
     }
 }
