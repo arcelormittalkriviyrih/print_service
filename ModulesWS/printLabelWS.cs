@@ -148,28 +148,28 @@ namespace PrintWindowsService
 			try
 			{
 				if (string.IsNullOrEmpty(printerIpAddress))
-					throw new Exception(string.Format("JobOrderId: {0}. Printer IP address missing for Printer {1}.", JobOrderId, printerNo));
+					throw new Exception(string.Format("Printer IP address missing for printer {0}.", printerNo));
 				if (string.IsNullOrEmpty(width))
-					throw new Exception(string.Format("JobOrderId: {0}. Paper width is null for printer {1}.", JobOrderId, printerNo));
+					throw new Exception(string.Format("Paper width is null for printer {0}.", printerNo));
 				if (string.IsNullOrEmpty(height))
-					throw new Exception(string.Format("JobOrderId: {0}. Paper height is null for {1}.", JobOrderId, printerNo));
+					throw new Exception(string.Format("Paper height is null for {0}.", printerNo));
 
 				int port = 9100;
 				if (!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["ZebraPrinterPort"], out port))
 				{
-					throw new Exception("JobOrderId: {0}. Printer port is missing in config.");
+					throw new Exception("Printer port is missing in config.");
 				}
 
 				int paperWidth = 0;
 				if (!int.TryParse(width, out paperWidth))
 				{
-					throw new Exception(string.Format("JobOrderId: {0}. Paper width is not integer for {1}.", JobOrderId, printerNo));
+					throw new Exception(string.Format("Paper width is not integer for {0}.", printerNo));
 				}
 
 				int paperHeight = 0;
 				if (!int.TryParse(height, out paperHeight))
 				{
-					throw new Exception(string.Format("JobOrderId: {0}. Paper height is not integer for {1}.", JobOrderId, printerNo));
+					throw new Exception(string.Format("Paper height is not integer for {0}.", printerNo));
 				}
 
 				connection = new TcpPrinterConnection(printerIpAddress, port);
@@ -183,23 +183,23 @@ namespace PrintWindowsService
 				}
 				else if (printerStatus.IsPaused)
 				{
-					throw new Exception(string.Format("JobOrderId: {0}. Cannot Print because the printer {1} is paused.", JobOrderId, printerNo));
+					throw new Exception(string.Format("Cannot Print because the printer {0} is paused.", printerNo));
 				}
 				else if (printerStatus.IsHeadOpen)
 				{
-					throw new Exception(string.Format("JobOrderId: {0}. Cannot Print because the printer {1} head is open.", JobOrderId, printerNo));
+					throw new Exception(string.Format("Cannot Print because the printer {0} head is open.", printerNo));
 				}
 				else if (printerStatus.IsPaperOut)
 				{
-					throw new Exception(string.Format("JobOrderId: {0}. Cannot Print because the paper is out for {1}.", JobOrderId, printerNo));
+					throw new Exception(string.Format("Cannot Print because the paper is out for printer {0}.", printerNo));
 				}
 				else if (printerStatus.IsRibbonOut)
 				{
-					throw new Exception(string.Format("JobOrderId: {0}. Cannot Print because the ribbon is out for {1}.", JobOrderId, printerNo));
+					throw new Exception(string.Format("Cannot Print because the ribbon is out for printer {0}.", printerNo));
 				}
 				else
 				{
-					throw new Exception(string.Format("JobOrderId: {0}. Cannot print to {1}.", JobOrderId, printerNo));
+					throw new Exception(string.Format("Cannot print to {0}. Not valid printer status: {1}", printerNo, printerStatus.ToString()));
 				}
 			}
 			catch (Exception ex)
