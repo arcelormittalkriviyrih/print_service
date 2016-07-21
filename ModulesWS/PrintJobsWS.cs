@@ -279,7 +279,7 @@ namespace PrintWindowsService
                             }
                             lLastError = string.Format("JobOrderID: {0}. Mail to: {1}. Status: {2}", job.JobOrderID, job.CommandRule, printState);
                         }
-                        SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, printState == "Failed" ? EventLogEntryType.FailureAudit : EventLogEntryType.SuccessAudit);
+                        SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, printState == "Failed" ? EventLogEntryType.Error : EventLogEntryType.Information);
                         if (printState == "Failed")
                         {
                             wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
