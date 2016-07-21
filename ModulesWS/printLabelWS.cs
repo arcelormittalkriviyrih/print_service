@@ -37,19 +37,19 @@ namespace PrintWindowsService
 				System.Net.NetworkInformation.PingReply printerReply = printerPing.Send(jobProps.IpAddress, pingTimeoutInSeconds);
 				if (printerReply.Status != System.Net.NetworkInformation.IPStatus.Success)
 				{
-					SenderMonitorEvent.sendMonitorEvent(eventLog, string.Format("Printer {0}  {1}  ping timeout status {2}", jobProps.PrinterName, jobProps.IpAddress, printerReply.Status), EventLogEntryType.Warning);
+					SenderMonitorEvent.sendMonitorEvent(eventLog, string.Format("JobOrderID: {0} Printer {1}  {2}  ping timeout status {3}", jobProps.JobOrderID, jobProps.PrinterNo, jobProps.IpAddress, printerReply.Status), EventLogEntryType.Warning);
 					return false;
 				}
 			}
 
 			Boolean boolPrintLabel = false;
 			if (PrepareTemplate(jobProps, false))
-			{
-				boolPrintLabel = PrintZebra(jobProps.IpAddress, jobProps.PaperWidth, jobProps.PaperHeight);//PrintBMP(jobProps.PrinterName);
+			{                
+                boolPrintLabel = PrintZebra(jobProps.IpAddress, jobProps.PaperWidth, jobProps.PaperHeight, jobProps.JobOrderID, jobProps.PrinterNo);//PrintBMP(jobProps.PrinterName);
 			}
 			else
 			{
-				SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not convert label template to pdf. Process failed", EventLogEntryType.Error);
+				//SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not convert label template to pdf. Process failed", EventLogEntryType.Error);
 				return false;
 			}
 
@@ -141,35 +141,35 @@ namespace PrintWindowsService
 		/// <param name="printerName">	Name of the printer. </param>
 		///
 		/// <returns>	true if it succeeds, false if it fails. </returns>
-		private static bool PrintZebra(string printerIpAddress, string width, string height)
+		private static bool PrintZebra(string printerIpAddress, string width, string height, int JobOrderId, string printerNo)
 		{
 			bool result = true;
 			ZebraPrinterConnection connection = null;
 			try
 			{
 				if (string.IsNullOrEmpty(printerIpAddress))
-					throw new Exception("Printer IP address missing.");
+					throw new Exception(string.Format("JobOrderId: {0}. Printer IP address missing for Printer {1}.", JobOrderId, printerNo));
 				if (string.IsNullOrEmpty(width))
-					throw new Exception(string.Format("Paper width is null for [{0}].", printerIpAddress));
+					throw new Exception(string.Format("JobOrderId: {0}. Paper width is null for printer {1}.", JobOrderId, printerNo));
 				if (string.IsNullOrEmpty(height))
-					throw new Exception(string.Format("Paper height is null for [{0}].", printerIpAddress));
+					throw new Exception(string.Format("JobOrderId: {0}. Paper height is null for {1}.", JobOrderId, printerNo));
 
 				int port = 9100;
 				if (!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["ZebraPrinterPort"], out port))
 				{
-					throw new Exception("Printer port is missing in config.");
+					throw new Exception("JobOrderId: {0}. Printer port is missing in config.");
 				}
 
 				int paperWidth = 0;
 				if (!int.TryParse(width, out paperWidth))
 				{
-					throw new Exception(string.Format("Paper width is not integer for [{0}].", printerIpAddress));
+					throw new Exception(string.Format("JobOrderId: {0}. Paper width is not integer for {1}.", JobOrderId, printerNo));
 				}
 
 				int paperHeight = 0;
 				if (!int.TryParse(height, out paperHeight))
 				{
-					throw new Exception(string.Format("Paper height is not integer for [{0}].", printerIpAddress));
+					throw new Exception(string.Format("JobOrderId: {0}. Paper height is not integer for {1}.", JobOrderId, printerNo));
 				}
 
 				connection = new TcpPrinterConnection(printerIpAddress, port);
@@ -183,28 +183,28 @@ namespace PrintWindowsService
 				}
 				else if (printerStatus.IsPaused)
 				{
-					throw new Exception(string.Format("Cannot Print because the printer [{0}] is paused.", printerIpAddress));
+					throw new Exception(string.Format("JobOrderId: {0}. Cannot Print because the printer {1} is paused.", JobOrderId, printerNo));
 				}
 				else if (printerStatus.IsHeadOpen)
 				{
-					throw new Exception(string.Format("Cannot Print because the printer [{0}] head is open.", printerIpAddress));
+					throw new Exception(string.Format("JobOrderId: {0}. Cannot Print because the printer {1} head is open.", JobOrderId, printerNo));
 				}
 				else if (printerStatus.IsPaperOut)
 				{
-					throw new Exception(string.Format("Cannot Print because the paper is out for [{0}].", printerIpAddress));
+					throw new Exception(string.Format("JobOrderId: {0}. Cannot Print because the paper is out for {1}.", JobOrderId, printerNo));
 				}
 				else if (printerStatus.IsRibbonOut)
 				{
-					throw new Exception(string.Format("Cannot Print because the ribbon is out for [{0}].", printerIpAddress));
+					throw new Exception(string.Format("JobOrderId: {0}. Cannot Print because the ribbon is out for {1}.", JobOrderId, printerNo));
 				}
 				else
 				{
-					throw new Exception(string.Format("Cannot print to [{0}].", printerIpAddress));
+					throw new Exception(string.Format("JobOrderId: {0}. Cannot print to {1}.", JobOrderId, printerNo));
 				}
 			}
 			catch (Exception ex)
 			{
-				SenderMonitorEvent.sendMonitorEvent(eventLog, "Print Zebra error: " + ex.ToString(), EventLogEntryType.Error);
+				SenderMonitorEvent.sendMonitorEvent(eventLog, "JobOrderId: "+ JobOrderId +". Print Zebra error: " + ex.ToString(), EventLogEntryType.Error);
 				result = false;
 			}
 			finally

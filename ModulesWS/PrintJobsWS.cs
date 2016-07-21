@@ -381,6 +381,14 @@ namespace PrintWindowsService
 		}
 
         /// <summary>
+		/// Printer NO
+		/// </summary>
+		public string PrinterNo
+        {
+            get { return getEquipmentProperty("PRINTER_NO"); }
+        }
+
+        /// <summary>
         /// Is exists template of label
         /// </summary>
         public bool isExistsTemplate
