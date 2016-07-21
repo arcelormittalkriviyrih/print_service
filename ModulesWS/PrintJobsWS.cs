@@ -309,8 +309,15 @@ namespace PrintWindowsService
                         {
                             var resp = new StreamReader((ex as System.Net.WebException).Response.GetResponseStream()).ReadToEnd();
 
-                            dynamic obj = JsonConvert.DeserializeObject(resp);
-                            details = obj.error.message;
+							try
+							{
+								dynamic obj = JsonConvert.DeserializeObject(resp);
+								details = obj.error.message;
+							}
+							catch
+							{
+								details = resp;
+							}
                         }
                         lLastError = "JobOrderID: " + lLastJobID + " Error: " + ex.ToString() + " Details: " + details;
                         SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
@@ -325,8 +332,15 @@ namespace PrintWindowsService
                 {
                     var resp = new StreamReader((ex as System.Net.WebException).Response.GetResponseStream()).ReadToEnd();
 
-                    dynamic obj = JsonConvert.DeserializeObject(resp);
-                    details = obj.error.message;
+					try
+					{
+						dynamic obj = JsonConvert.DeserializeObject(resp);
+						details = obj.error.message;
+					}
+					catch
+					{
+						details = resp;
+					}
                 }
                 lLastError = "Error getting jobs: " + ex.ToString() + " Details: " + details;
                 SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
