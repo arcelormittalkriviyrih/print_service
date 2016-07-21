@@ -355,6 +355,7 @@ namespace PrintWindowsService
         {
             get { return getEquipmentProperty("PRINTER_NAME"); }
         }
+
         /// <summary>
         /// IP of printer
         /// </summary>
@@ -362,6 +363,23 @@ namespace PrintWindowsService
         {
             get { return getEquipmentProperty("PRINTER_IP"); }
         }
+
+		/// <summary>
+		/// Paper width in pixels
+		/// </summary>
+		public string PaperWidth
+		{
+			get { return getEquipmentProperty("PAPER_WIDTH"); }
+		}
+
+		/// <summary>
+		/// Paper height in pixels
+		/// </summary>
+		public string PaperHeight
+		{
+			get { return getEquipmentProperty("PAPER_HEIGHT"); }
+		}
+
         /// <summary>
         /// Is exists template of label
         /// </summary>
