@@ -88,25 +88,30 @@ namespace PrintWindowsService
 		/// <returns>	true if it succeeds, false if it fails. </returns>
 		private static bool ConvertToBMP()
 		{
-			//File.Delete(PDFTemplateFile);
-			//ProcessStartInfo startInfo = new ProcessStartInfo();
-			//startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + BMPTemplateFile + "\"";
-			//startInfo.FileName = xlsConverterPath;
-			//startInfo.UseShellExecute = false;
+            //File.Delete(PDFTemplateFile);
+            //ProcessStartInfo startInfo = new ProcessStartInfo();
+            //startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + BMPTemplateFile + "\"";
+            //startInfo.FileName = xlsConverterPath;
+            //startInfo.UseShellExecute = false;
 
-			//startInfo.RedirectStandardError = true;
-			//startInfo.RedirectStandardOutput = true;
-			//startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            //startInfo.RedirectStandardError = true;
+            //startInfo.RedirectStandardOutput = true;
+            //startInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
-			//Process process = null;
-			//process = Process.Start(startInfo);
-			//process.WaitForExit(30000);
-			//if (process.HasExited == false)
-			//    process.Kill();
-			//int exitcode = process.ExitCode;
-			//process.Close();
-			//return exitcode == 0;
-			xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile, 203f, 203f, true);
+            //Process process = null;
+            //process = Process.Start(startInfo);
+            //process.WaitForExit(30000);
+            //if (process.HasExited == false)
+            //    process.Kill();
+            //int exitcode = process.ExitCode;
+            //process.Close();
+            //return exitcode == 0;
+            float dpi = 203f;
+            if (!float.TryParse(System.Configuration.ConfigurationManager.AppSettings["ZebraPrinterDPI"], out dpi))
+            {
+                throw new Exception("Printer DPI is missing in config.");
+            }
+            xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile, dpi, dpi, true);
 			return File.Exists(BMPTemplateFile);
 		}
 
@@ -160,8 +165,8 @@ namespace PrintWindowsService
 				{
 					throw new Exception("Printer port is missing in config.");
 				}
-
-				int paperWidth = 0;
+                
+                int paperWidth = 0;
 				if (!int.TryParse(width, out paperWidth))
 				{
 					throw new Exception(string.Format("Paper width is not integer for {0}.", printerNo));
