@@ -180,7 +180,8 @@ namespace PrintWindowsService
 				PrinterStatus printerStatus = printer.GetCurrentStatus();
 				if (printerStatus.IsReadyToPrint)
 				{
-					printer.GetGraphicsUtil().PrintImage(BMPTemplateFile, 0, 0, paperWidth, paperHeight, false);
+                    printer.GetGraphicsUtil().PrintImage(BMPTemplateFile, 0, 0);
+                    //printer.GetGraphicsUtil().PrintImage(BMPTemplateFile, 0, 0, paperWidth, paperHeight, false);
 				}
 				else if (printerStatus.IsPaused)
 				{
