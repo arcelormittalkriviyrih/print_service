@@ -202,7 +202,7 @@ namespace PrintWindowsService
                                                                                   joValue.ID));
             string PrintJobParameters = Requests.MakeRequest(PrintJobParametersUrl);
             List<PrintJobParametersValue> PrintJobParametersObj = DeserializePrintJobParameters(PrintJobParameters);
-            CommonEventSender.SenderMonitorEvent.sendMonitorEvent(EventLog, "Reading v_PrintJobParameters for job " + joValue.ID, System.Diagnostics.EventLogEntryType.Information);
+            //CommonEventSender.SenderMonitorEvent.sendMonitorEvent(EventLog, "Reading v_PrintJobParameters for job " + joValue.ID, System.Diagnostics.EventLogEntryType.Information);
 
             string PrinterID = getPrintJobParameter(PrintJobParametersObj, "PrinterID");
             string MaterialLotID = getPrintJobParameter(PrintJobParametersObj, "MaterialLotID");
@@ -215,20 +215,20 @@ namespace PrintWindowsService
                 string EquipmentProperty = Requests.MakeRequest(EquipmentPropertyUrl);
                 EquipmentPropertyObj = DeserializeEquipmentProperty(EquipmentProperty);
             }
-            CommonEventSender.SenderMonitorEvent.sendMonitorEvent(EventLog, "Reading v_EquipmentProperty for job " + joValue.ID, System.Diagnostics.EventLogEntryType.Information);
+            //CommonEventSender.SenderMonitorEvent.sendMonitorEvent(EventLog, "Reading v_EquipmentProperty for job " + joValue.ID, System.Diagnostics.EventLogEntryType.Information);
 
             string PrintPropertiesUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_PrintProperties?$filter=MaterialLotID%20eq%20{0}&$select=TypeProperty,PropertyCode,Value",
                                                                MaterialLotID));
             string PrintPropertiesResponse = Requests.MakeRequest(PrintPropertiesUrl);
             List<PrintPropertiesValue> PrintPropertiesObj = DeserializePrintProperties(PrintPropertiesResponse);
-            CommonEventSender.SenderMonitorEvent.sendMonitorEvent(EventLog, "Reading v_PrintProperties for job " + joValue.ID, System.Diagnostics.EventLogEntryType.Information);
+            //CommonEventSender.SenderMonitorEvent.sendMonitorEvent(EventLog, "Reading v_PrintProperties for job " + joValue.ID, System.Diagnostics.EventLogEntryType.Information);
 
             string TemplateUrl = Requests.CreateRequest(webServiceUrl, string.Format("v_PrintFile?$filter=MaterialLotID%20eq%20{0}%20and%20Property%20eq%20%27{1}%27&$select=Data",
                                                         MaterialLotID, "TEMPLATE"));
             //test string TemplateUrl = Requests.CreateRequest(webServiceUrl, "Files?$filter=ID%20eq%2068&$select=Data");
             string TemplateResponse = Requests.MakeRequest(TemplateUrl);
             List<LabelTemplateValue> LabelTemplateObj = DeserializeLabelTemplate(TemplateResponse);
-            CommonEventSender.SenderMonitorEvent.sendMonitorEvent(EventLog, "Reading v_PrintFile for job " + joValue.ID, System.Diagnostics.EventLogEntryType.Information);
+            //CommonEventSender.SenderMonitorEvent.sendMonitorEvent(EventLog, "Reading v_PrintFile for job " + joValue.ID, System.Diagnostics.EventLogEntryType.Information);
             byte[] XlFile = null;
 
             if (LabelTemplateObj.Count > 0)

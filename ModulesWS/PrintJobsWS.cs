@@ -251,12 +251,19 @@ namespace PrintWindowsService
                 {
                     try
                     {
+                        var watch = System.Diagnostics.Stopwatch.StartNew();
                         PrintJobProps job = lDbData.getJobData(EventLog, jobVal);
+                        watch.Stop();
+                        var elapsedMsGetJobData = watch.ElapsedMilliseconds;
+                        SenderMonitorEvent.sendMonitorEvent(eventLog, "getJobData: " + elapsedMsGetJobData, System.Diagnostics.EventLogEntryType.Information);
                         lLastJobID = job.JobOrderID;
                         if (job.isExistsTemplate)
                         {
-                            SenderMonitorEvent.sendMonitorEvent(EventLog, "Prepare template file...", EventLogEntryType.Information);
+                            watch = System.Diagnostics.Stopwatch.StartNew();
                             job.prepareTemplate(PrintLabelWS.ExcelTemplateFile);
+                            watch.Stop();
+                            var elapsedMsSaveExcelEmpty = watch.ElapsedMilliseconds;
+                            SenderMonitorEvent.sendMonitorEvent(eventLog, "Save empty Excel: " + elapsedMsSaveExcelEmpty, System.Diagnostics.EventLogEntryType.Information);
                             if (job.Command == "Print")
                             {
                                 if (PrintLabelWS.PrintTemplate(job))

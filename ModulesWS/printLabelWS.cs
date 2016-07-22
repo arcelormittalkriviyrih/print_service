@@ -30,8 +30,9 @@ namespace PrintWindowsService
 		/// </summary>
 		public static bool PrintTemplate(PrintJobProps jobProps)
 		{
-			//перед печатью если задан IP сделать пинг
-			if ((pingTimeoutInSeconds > 0) && (jobProps.IpAddress != ""))
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            //перед печатью если задан IP сделать пинг
+            if ((pingTimeoutInSeconds > 0) && (jobProps.IpAddress != ""))
 			{
 				System.Net.NetworkInformation.Ping printerPing = new System.Net.NetworkInformation.Ping();
 				System.Net.NetworkInformation.PingReply printerReply = printerPing.Send(jobProps.IpAddress, pingTimeoutInSeconds);
@@ -41,12 +42,19 @@ namespace PrintWindowsService
 					return false;
 				}
 			}
+            watch.Stop();
+            var elapsedMsPingPrinter = watch.ElapsedMilliseconds;
+            SenderMonitorEvent.sendMonitorEvent(eventLog, "Ping printer: " + elapsedMsPingPrinter, System.Diagnostics.EventLogEntryType.Information);
 
-			Boolean boolPrintLabel = false;
+            Boolean boolPrintLabel = false;
 			if (PrepareTemplate(jobProps, false))
-			{                
+			{
+                watch = System.Diagnostics.Stopwatch.StartNew();
                 boolPrintLabel = PrintZebra(jobProps.IpAddress, jobProps.PaperWidth, jobProps.PaperHeight, jobProps.JobOrderID, jobProps.PrinterNo);//PrintBMP(jobProps.PrinterName);
-			}
+                watch.Stop();
+                var elapsedMsPrint = watch.ElapsedMilliseconds;
+                SenderMonitorEvent.sendMonitorEvent(eventLog, "PrintZebra: " + elapsedMsPrint, System.Diagnostics.EventLogEntryType.Information);
+            }
 			else
 			{
 				//SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not convert label template to pdf. Process failed", EventLogEntryType.Error);
@@ -148,7 +156,6 @@ namespace PrintWindowsService
 		/// <returns>	true if it succeeds, false if it fails. </returns>
 		private static bool PrintZebra(string printerIpAddress, string width, string height, int JobOrderId, string printerNo)
 		{
-            SenderMonitorEvent.sendMonitorEvent(eventLog, "Printing file...", EventLogEntryType.Information);
             bool result = true;
 			ZebraPrinterConnection connection = null;
 			try
@@ -261,12 +268,12 @@ namespace PrintWindowsService
 		///
 		/// <returns>	true if it succeeds, false if it fails. </returns>
 		private static bool PrepareTemplate(PrintJobProps jobProps, bool isPDF)
-		{            
+		{
+            var watch = System.Diagnostics.Stopwatch.StartNew();
             Boolean boolConvertLabel = false;
 			LabelTemplate lTemplate = new LabelTemplate(ExcelTemplateFile);
 			try
 			{
-                SenderMonitorEvent.sendMonitorEvent(eventLog, "Fill template file...", EventLogEntryType.Information);
                 lTemplate.FillParamValues(jobProps);
 			}
 			catch (Exception ex)
@@ -274,8 +281,11 @@ namespace PrintWindowsService
 				SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not prepare label template. Error: " + ex.ToString(), EventLogEntryType.Error);
 				return false;
 			}
-
-			try
+            watch.Stop();
+            var elapsedMsFillTemplate = watch.ElapsedMilliseconds;
+            SenderMonitorEvent.sendMonitorEvent(eventLog, "Fill template: " + elapsedMsFillTemplate, System.Diagnostics.EventLogEntryType.Information);
+            watch = System.Diagnostics.Stopwatch.StartNew();
+            try
 			{
 				if (isPDF)
 					boolConvertLabel = ConvertToPDF();
@@ -287,8 +297,10 @@ namespace PrintWindowsService
 				SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not convert label template to pdf. Error: " + ex.ToString(), EventLogEntryType.Error);
 				return false;
 			}
-
-			return boolConvertLabel;
+            watch.Stop();
+            var elapsedMsConvert = watch.ElapsedMilliseconds;
+            SenderMonitorEvent.sendMonitorEvent(eventLog, "ConvertToBMP: " + elapsedMsConvert, System.Diagnostics.EventLogEntryType.Information);
+            return boolConvertLabel;
 		}
 
 		/// <summary>	Email PDF. </summary>
