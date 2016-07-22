@@ -106,7 +106,7 @@ namespace PrintWindowsService
 			//int exitcode = process.ExitCode;
 			//process.Close();
 			//return exitcode == 0;
-			xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile, 600f, 600f, true);
+			xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile, 203f, 203f, true);
 			return File.Exists(BMPTemplateFile);
 		}
 
