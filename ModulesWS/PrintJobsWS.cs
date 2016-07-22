@@ -240,6 +240,7 @@ namespace PrintWindowsService
 
             string lLastError = string.Empty;
             int lLastJobID = 0;
+            string lFactoryNumber = string.Empty;
             List<PrintJobProps> JobData = new List<PrintJobProps>();
             try
             {
@@ -250,20 +251,16 @@ namespace PrintWindowsService
                 foreach (JobOrders.JobOrdersValue jobVal in jobsToProcess.JobOrdersObj)
                 {
                     try
-                    {
-                        var watch = System.Diagnostics.Stopwatch.StartNew();
-                        PrintJobProps job = lDbData.getJobData(EventLog, jobVal);
-                        watch.Stop();
-                        var elapsedMsGetJobData = watch.ElapsedMilliseconds;
-                        SenderMonitorEvent.sendMonitorEvent(eventLog, "getJobData: " + elapsedMsGetJobData, System.Diagnostics.EventLogEntryType.Information);
+                    {                        
+                        PrintJobProps job = lDbData.getJobData(EventLog, jobVal);                                                
                         lLastJobID = job.JobOrderID;
+                        lFactoryNumber = job.getLabelParameter("FactoryNumber", "FactoryNumber");
+                        if (string.IsNullOrEmpty(job.IpAddress))
+                            throw new Exception(string.Format("Printer IP address missing for printer {0}.", job.PrinterNo));
+
                         if (job.isExistsTemplate)
-                        {
-                            watch = System.Diagnostics.Stopwatch.StartNew();
-                            job.prepareTemplate(PrintLabelWS.ExcelTemplateFile);
-                            watch.Stop();
-                            var elapsedMsSaveExcelEmpty = watch.ElapsedMilliseconds;
-                            SenderMonitorEvent.sendMonitorEvent(eventLog, "Save empty Excel: " + elapsedMsSaveExcelEmpty, System.Diagnostics.EventLogEntryType.Information);
+                        {                            
+                            job.prepareTemplate(PrintLabelWS.ExcelTemplateFile);                                                        
                             if (job.Command == "Print")
                             {
                                 if (PrintLabelWS.PrintTemplate(job))
@@ -275,7 +272,7 @@ namespace PrintWindowsService
                                 {
                                     printState = "Failed";
                                 }
-                                lLastError = string.Format("JobOrderID: {0}. Print to: {1}. Status: {2}", job.JobOrderID, job.PrinterName, printState);
+                                lLastError = string.Format("JobOrderID: {0}. FactoryNumber: {3}. Print to: {1}. Status: {2}", job.JobOrderID, job.PrinterName, printState, lFactoryNumber);
                             }
                             else
                             {
@@ -288,7 +285,7 @@ namespace PrintWindowsService
                                 {
                                     printState = "Failed";
                                 }
-                                lLastError = string.Format("JobOrderID: {0}. Mail to: {1}. Status: {2}", job.JobOrderID, job.CommandRule, printState);
+                                lLastError = string.Format("JobOrderID: {0}. FactoryNumber: {3}. Mail to: {1}. Status: {2}", job.JobOrderID, job.CommandRule, printState, lFactoryNumber);
                             }
                             SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, printState == "Failed" ? EventLogEntryType.Error : EventLogEntryType.Information);
                             if (printState == "Failed")
@@ -299,7 +296,7 @@ namespace PrintWindowsService
                         else
                         {
                             printState = "Failed";
-                            lLastError = string.Format("Excel template is empty. JobOrderID: {0}", job.JobOrderID);
+                            lLastError = string.Format("Excel template is empty. JobOrderID: {0}. FactoryNumber: {1}.", job.JobOrderID, lFactoryNumber);
                             SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
                             wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                         }
@@ -326,7 +323,7 @@ namespace PrintWindowsService
 								details = resp;
 							}
                         }
-                        lLastError = "JobOrderID: " + lLastJobID + " Error: " + ex.ToString() + " Details: " + details;
+                        lLastError = "JobOrderID: " + lLastJobID + ". FactoryNumber: " +lFactoryNumber+ " Error: " + ex.ToString() + " Details: " + details;
                         SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
                         wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                     }

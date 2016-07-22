@@ -30,7 +30,6 @@ namespace PrintWindowsService
 		/// </summary>
 		public static bool PrintTemplate(PrintJobProps jobProps)
 		{
-            var watch = System.Diagnostics.Stopwatch.StartNew();
             //перед печатью если задан IP сделать пинг
             if ((pingTimeoutInSeconds > 0) && (jobProps.IpAddress != ""))
 			{
@@ -42,18 +41,11 @@ namespace PrintWindowsService
 					return false;
 				}
 			}
-            watch.Stop();
-            var elapsedMsPingPrinter = watch.ElapsedMilliseconds;
-            SenderMonitorEvent.sendMonitorEvent(eventLog, "Ping printer: " + elapsedMsPingPrinter, System.Diagnostics.EventLogEntryType.Information);
-
+            
             Boolean boolPrintLabel = false;
 			if (PrepareTemplate(jobProps, false))
 			{
-                watch = System.Diagnostics.Stopwatch.StartNew();
-                boolPrintLabel = PrintZebra(jobProps.IpAddress, jobProps.PaperWidth, jobProps.PaperHeight, jobProps.JobOrderID, jobProps.PrinterNo);//PrintBMP(jobProps.PrinterName);
-                watch.Stop();
-                var elapsedMsPrint = watch.ElapsedMilliseconds;
-                SenderMonitorEvent.sendMonitorEvent(eventLog, "PrintZebra: " + elapsedMsPrint, System.Diagnostics.EventLogEntryType.Information);
+                boolPrintLabel = PrintZebra(jobProps.IpAddress, jobProps.PaperWidth, jobProps.PaperHeight, jobProps.JobOrderID, jobProps.PrinterNo);//PrintBMP(jobProps.PrinterName);            
             }
 			else
 			{
@@ -192,8 +184,8 @@ namespace PrintWindowsService
 				PrinterStatus printerStatus = printer.GetCurrentStatus();
 				if (printerStatus.IsReadyToPrint)
 				{
-                    printer.GetGraphicsUtil().PrintImage(BMPTemplateFile, 0, 0);
-                    //printer.GetGraphicsUtil().PrintImage(BMPTemplateFile, 0, 0, paperWidth, paperHeight, false);
+                    //printer.GetGraphicsUtil().PrintImage(BMPTemplateFile, 0, 0);
+                    printer.GetGraphicsUtil().PrintImage(BMPTemplateFile, 0, 0, paperWidth, paperHeight, false);
 				}
 				else if (printerStatus.IsPaused)
 				{
@@ -269,7 +261,6 @@ namespace PrintWindowsService
 		/// <returns>	true if it succeeds, false if it fails. </returns>
 		private static bool PrepareTemplate(PrintJobProps jobProps, bool isPDF)
 		{
-            var watch = System.Diagnostics.Stopwatch.StartNew();
             Boolean boolConvertLabel = false;
 			LabelTemplate lTemplate = new LabelTemplate(ExcelTemplateFile);
 			try
@@ -281,10 +272,6 @@ namespace PrintWindowsService
 				SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not prepare label template. Error: " + ex.ToString(), EventLogEntryType.Error);
 				return false;
 			}
-            watch.Stop();
-            var elapsedMsFillTemplate = watch.ElapsedMilliseconds;
-            SenderMonitorEvent.sendMonitorEvent(eventLog, "Fill template: " + elapsedMsFillTemplate, System.Diagnostics.EventLogEntryType.Information);
-            watch = System.Diagnostics.Stopwatch.StartNew();
             try
 			{
 				if (isPDF)
@@ -297,9 +284,6 @@ namespace PrintWindowsService
 				SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not convert label template to pdf. Error: " + ex.ToString(), EventLogEntryType.Error);
 				return false;
 			}
-            watch.Stop();
-            var elapsedMsConvert = watch.ElapsedMilliseconds;
-            SenderMonitorEvent.sendMonitorEvent(eventLog, "ConvertToBMP: " + elapsedMsConvert, System.Diagnostics.EventLogEntryType.Information);
             return boolConvertLabel;
 		}
 
