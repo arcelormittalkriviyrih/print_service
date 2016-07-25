@@ -33,22 +33,12 @@ namespace PrintWindowsService
         /// The name of the configuration parameter for the print task frequency in seconds.
         /// </summary>
         private const string cPrintTaskFrequencyName = "PrintTaskFrequency";
-
-        /// <summary>
-        /// The name of the configuration parameter for the ping timeout in seconds.
-        /// </summary>
-        private const string cPingTimeoutName = "PingTimeout";
-
+        
         /// <summary>
         /// The name of the configuration parameter for the Odata service url.
         /// </summary>
         private const string cOdataService = "OdataServiceUri";
-
-        /// <summary>
-        /// The name of the configuration parameter for the XlsConverter path
-        /// </summary>
-        private const string cXlsConverterPath = "XlsConverterPath";
-
+        
         /// <summary>
         /// The name of the configuration parameter for the Ghost Script path
         /// </summary>
@@ -144,11 +134,9 @@ namespace PrintWindowsService
             //dbConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings[cConnectionStringName].ConnectionString;
             odataServiceUrl = System.Configuration.ConfigurationManager.AppSettings[cOdataService];
 
-            PrintLabelWS.pingTimeoutInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPingTimeoutName]);
             PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
             PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
-            PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";
-            PrintLabelWS.xlsConverterPath = System.Configuration.ConfigurationManager.AppSettings[cXlsConverterPath];
+            PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";            
             PrintLabelWS.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath];
             PrintLabelWS.SMTPHost = System.Configuration.ConfigurationManager.AppSettings[cSMTPHost];
             PrintLabelWS.SMTPPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cSMTPPort]);
@@ -157,8 +145,6 @@ namespace PrintWindowsService
                                                          Environment.MachineName,
                                                          Assembly.GetExecutingAssembly().GetName().Version.ToString(),
                                                          DateTime.Now,
-                                                         printTaskFrequencyInSeconds,
-                                                         PrintLabelWS.pingTimeoutInSeconds,
                                                          odataServiceUrl);
 
             printTimer = new System.Timers.Timer();

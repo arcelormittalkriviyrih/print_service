@@ -15,12 +15,11 @@ namespace PrintWindowsService
 	/// </summary>
 	public static class PrintLabelWS
 	{
-		public static int pingTimeoutInSeconds;
+		//public static int pingTimeoutInSeconds;
 		public static EventLog eventLog;
 		public static string ExcelTemplateFile;
 		public static string PDFTemplateFile;
-		public static string BMPTemplateFile;
-		public static string xlsConverterPath;
+		public static string BMPTemplateFile;		
 		public static string ghostScriptPath;
 		public static string SMTPHost;
 		public static int SMTPPort;
@@ -31,16 +30,16 @@ namespace PrintWindowsService
 		public static bool PrintTemplate(PrintJobProps jobProps)
 		{
             //перед печатью если задан IP сделать пинг
-            if ((pingTimeoutInSeconds > 0) && (jobProps.IpAddress != ""))
-			{
-				System.Net.NetworkInformation.Ping printerPing = new System.Net.NetworkInformation.Ping();
-				System.Net.NetworkInformation.PingReply printerReply = printerPing.Send(jobProps.IpAddress, pingTimeoutInSeconds);
-				if (printerReply.Status != System.Net.NetworkInformation.IPStatus.Success)
-				{
-					SenderMonitorEvent.sendMonitorEvent(eventLog, string.Format("JobOrderID: {0} Printer {1}  {2}  ping timeout status {3}", jobProps.JobOrderID, jobProps.PrinterNo, jobProps.IpAddress, printerReply.Status), EventLogEntryType.Warning);
-					return false;
-				}
-			}
+   //         if ((pingTimeoutInSeconds > 0) && (jobProps.IpAddress != ""))
+			//{
+			//	System.Net.NetworkInformation.Ping printerPing = new System.Net.NetworkInformation.Ping();
+			//	System.Net.NetworkInformation.PingReply printerReply = printerPing.Send(jobProps.IpAddress, pingTimeoutInSeconds);
+			//	if (printerReply.Status != System.Net.NetworkInformation.IPStatus.Success)
+			//	{
+			//		SenderMonitorEvent.sendMonitorEvent(eventLog, string.Format("JobOrderID: {0} Printer {1}  {2}  ping timeout status {3}", jobProps.JobOrderID, jobProps.PrinterNo, jobProps.IpAddress, printerReply.Status), EventLogEntryType.Warning);
+			//		return false;
+			//	}
+			//}
             
             Boolean boolPrintLabel = false;
 			if (PrepareTemplate(jobProps, false))
