@@ -226,14 +226,16 @@ namespace PrintWindowsService
 
             string lLastError = string.Empty;
             int lLastJobID = 0;
+            int CountJobsToProcess = 0;
             string lFactoryNumber = string.Empty;
-            List<PrintJobProps> JobData = new List<PrintJobProps>();
+            
             try
             {
                 string printState;
                 LabeldbData lDbData = new LabeldbData(odataServiceUrl);
                 JobOrders jobsToProcess = lDbData.getJobsToProcess();
-                SenderMonitorEvent.sendMonitorEvent(EventLog, "Jobs to process: " + jobsToProcess.JobOrdersObj.Count, EventLogEntryType.Information);
+                CountJobsToProcess = jobsToProcess.JobOrdersObj.Count;
+                SenderMonitorEvent.sendMonitorEvent(EventLog, "Jobs to process: " + CountJobsToProcess, EventLogEntryType.Information);
                 foreach (JobOrders.JobOrdersValue jobVal in jobsToProcess.JobOrdersObj)
                 {
                     try
@@ -340,9 +342,9 @@ namespace PrintWindowsService
                 SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
                 wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
             }
-            wmiProductInfo.PrintedLabelsCount += JobData.Count;
+            wmiProductInfo.PrintedLabelsCount += CountJobsToProcess;
             wmiProductInfo.PublishInfo();
-            SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print is done. {0} tasks", JobData.Count), EventLogEntryType.Information);
+            SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print is done. {0} tasks", CountJobsToProcess), EventLogEntryType.Information);
 
             printTimer.Start();
         }
