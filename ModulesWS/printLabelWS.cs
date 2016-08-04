@@ -140,12 +140,64 @@ namespace PrintWindowsService
 			return exitcode == 0;
 		}
 
-		/// <summary>	Print BMP. </summary>
-		///
-		/// <param name="printerName">	Name of the printer. </param>
-		///
-		/// <returns>	true if it succeeds, false if it fails. </returns>
-		private static bool PrintZebra(string printerIpAddress, string width, string height, int JobOrderId, string printerNo)
+        public static void checkPrinterStatus(string printerIpAddress, string printerNo)
+        {
+            ZebraPrinterConnection connection = null;
+            try
+            {
+                int port = 9100;
+                if (!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["ZebraPrinterPort"], out port))
+                {
+                    throw new Exception("Printer port is missing in config.");
+                }
+
+                connection = new TcpPrinterConnection(printerIpAddress, port);
+                connection.Open();
+                ZebraPrinter printer = ZebraPrinterFactory.GetInstance(connection);
+
+                PrinterStatus printerStatus = printer.GetCurrentStatus();
+                if (printerStatus.IsReadyToPrint)
+                {
+                    return;
+                }
+                else if (printerStatus.IsPaused)
+                {
+                    throw new Exception(string.Format("Cannot Print because the printer {0} is paused.", printerNo));
+                }
+                else if (printerStatus.IsHeadOpen)
+                {
+                    throw new Exception(string.Format("Cannot Print because the printer {0} head is open.", printerNo));
+                }
+                else if (printerStatus.IsPaperOut)
+                {
+                    throw new Exception(string.Format("Cannot Print because the paper is out for printer {0}.", printerNo));
+                }
+                else if (printerStatus.IsRibbonOut)
+                {
+                    throw new Exception(string.Format("Cannot Print because the ribbon is out for printer {0}.", printerNo));
+                }
+                else
+                {
+                    throw new Exception(string.Format("Cannot print to {0}. Not valid printer status: {1}", printerNo, printerStatus.ToString()));
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                if (connection != null && connection.IsConnected())
+                    connection.Close();
+            }
+        }
+
+        /// <summary>	Print BMP. </summary>
+        ///
+        /// <param name="printerName">	Name of the printer. </param>
+        ///
+        /// <returns>	true if it succeeds, false if it fails. </returns>
+        private static bool PrintZebra(string printerIpAddress, string width, string height, int JobOrderId, string printerNo)
 		{
             bool result = true;
 			ZebraPrinterConnection connection = null;

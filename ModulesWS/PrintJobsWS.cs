@@ -245,7 +245,11 @@ namespace PrintWindowsService
                             throw new Exception(string.Format("Printer IP address missing for printer {0}.", job.PrinterNo));
 
                         if (job.isExistsTemplate)
-                        {                            
+                        {
+                            if (job.Command == "Print")
+                            {
+                                PrintLabelWS.checkPrinterStatus(job.IpAddress, job.PrinterNo);
+                            }
                             job.prepareTemplate(PrintLabelWS.ExcelTemplateFile);                                                        
                             if (job.Command == "Print")
                             {
