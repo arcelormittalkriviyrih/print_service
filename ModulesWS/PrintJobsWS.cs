@@ -250,7 +250,12 @@ namespace PrintWindowsService
                         {
                             if (job.Command == "Print")
                             {
-                                PrintLabelWS.checkPrinterStatus(job.IpAddress, job.PrinterNo);
+                                string printerStatus = PrintLabelWS.getPrinterStatus(job.IpAddress, job.PrinterNo);
+                                Requests.updatePrinterStatus(odataServiceUrl, job.PrinterNo, printerStatus);
+                                if (!printerStatus.Equals("OK"))
+                                {
+                                    throw new Exception(string.Format("Cannot print to {0}. Not valid printer status: {1}", job.PrinterNo, printerStatus));
+                                }
                             }
                             job.prepareTemplate(PrintLabelWS.ExcelTemplateFile);                                                        
                             if (job.Command == "Print")

@@ -7,6 +7,7 @@ using System.Net.Mail;
 using CommonEventSender;
 using ZSDK_API.Comm;
 using ZSDK_API.Printer;
+using JobOrdersService;
 
 namespace PrintWindowsService
 {
@@ -139,9 +140,11 @@ namespace PrintWindowsService
 			process.Close();
 			return exitcode == 0;
 		}
+        
 
-        public static void checkPrinterStatus(string printerIpAddress, string printerNo)
+        public static string getPrinterStatus(string printerIpAddress, string printerNo)
         {
+            
             ZebraPrinterConnection connection = null;
             try
             {
@@ -157,28 +160,28 @@ namespace PrintWindowsService
 
                 PrinterStatus printerStatus = printer.GetCurrentStatus();
                 if (printerStatus.IsReadyToPrint)
-                {
-                    return;
+                {                    
+                    return "OK";
                 }
                 else if (printerStatus.IsPaused)
                 {
-                    throw new Exception(string.Format("Cannot Print because the printer {0} is paused.", printerNo));
+                    return "Paused";                    
                 }
                 else if (printerStatus.IsHeadOpen)
                 {
-                    throw new Exception(string.Format("Cannot Print because the printer {0} head is open.", printerNo));
+                    return  "Head is open";                    
                 }
                 else if (printerStatus.IsPaperOut)
                 {
-                    throw new Exception(string.Format("Cannot Print because the paper is out for printer {0}.", printerNo));
+                    return  "Out of paper";                    
                 }
                 else if (printerStatus.IsRibbonOut)
                 {
-                    throw new Exception(string.Format("Cannot Print because the ribbon is out for printer {0}.", printerNo));
+                    return  "Ribbon is out";                    
                 }
                 else
                 {
-                    throw new Exception(string.Format("Cannot print to {0}. Not valid printer status: {1}", printerNo, printerStatus.ToString()));
+                    return  "Invalid status: "+ printerStatus.ToString();                    
                 }
             }
             catch (Exception ex)
