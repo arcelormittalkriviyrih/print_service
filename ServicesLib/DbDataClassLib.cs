@@ -121,7 +121,7 @@ namespace JobOrdersService
 
             using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
             {
-                if (response.StatusCode != HttpStatusCode.NoContent)
+                if (response.StatusCode != HttpStatusCode.OK)
                     throw new Exception(string.Format(
                     "Server error (HTTP {0}: {1}).",
                     response.StatusCode,
