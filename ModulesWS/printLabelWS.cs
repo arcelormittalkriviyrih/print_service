@@ -21,7 +21,7 @@ namespace PrintWindowsService
 		public static string ExcelTemplateFile;
 		public static string PDFTemplateFile;
 		public static string BMPTemplateFile;		
-		public static string ghostScriptPath;
+		//public static string ghostScriptPath;
 		public static string SMTPHost;
 		public static int SMTPPort;
 
@@ -115,7 +115,8 @@ namespace PrintWindowsService
 			return File.Exists(BMPTemplateFile);
 		}
 
-		/// <summary>	Print PDF. </summary>
+		/*
+        /// <summary>	Print PDF. </summary>
 		///
 		/// <param name="printerName">	Name of the printer. </param>
 		///
@@ -139,7 +140,7 @@ namespace PrintWindowsService
 			int exitcode = process.ExitCode;
 			process.Close();
 			return exitcode == 0;
-		}
+		}*/
         
 
         public static string getPrinterStatus(string printerIpAddress, string printerNo)

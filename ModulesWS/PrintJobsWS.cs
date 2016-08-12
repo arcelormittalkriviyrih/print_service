@@ -39,10 +39,10 @@ namespace PrintWindowsService
         /// </summary>
         private const string cOdataService = "OdataServiceUri";
         
-        /// <summary>
-        /// The name of the configuration parameter for the Ghost Script path
-        /// </summary>
-        private const string cGhostScriptPath = "GhostScriptPath";
+        ///// <summary>
+        ///// The name of the configuration parameter for the Ghost Script path
+        ///// </summary>
+        //private const string cGhostScriptPath = "GhostScriptPath";
 
         /// <summary>
         /// The name of the configuration parameter for the SMTP host
@@ -137,7 +137,7 @@ namespace PrintWindowsService
             PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
             PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
             PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";            
-            PrintLabelWS.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath];
+            //PrintLabelWS.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath];
             PrintLabelWS.SMTPHost = System.Configuration.ConfigurationManager.AppSettings[cSMTPHost];
             PrintLabelWS.SMTPPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cSMTPPort]);
 
