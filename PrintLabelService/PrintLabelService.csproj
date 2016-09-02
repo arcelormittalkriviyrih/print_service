@@ -32,7 +32,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-	<ProjectConfigFileName>App.config</ProjectConfigFileName>
+    <ProjectConfigFileName>App.config</ProjectConfigFileName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -76,6 +76,22 @@
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Spire.Common, Version=1.2.366.55040, Culture=neutral, PublicKeyToken=663f351905198cb3, processorArchitecture=MSIL">
+      <HintPath>..\packages\FreeSpire.XLS.7.9\lib\net40\Spire.Common.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Spire.License, Version=1.3.5.40, Culture=neutral, PublicKeyToken=b1144360237c8b3f, processorArchitecture=MSIL">
+      <HintPath>..\packages\FreeSpire.XLS.7.9\lib\net40\Spire.License.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Spire.Pdf, Version=3.6.230.55040, Culture=neutral, PublicKeyToken=663f351905198cb3, processorArchitecture=MSIL">
+      <HintPath>..\packages\FreeSpire.XLS.7.9\lib\net40\Spire.Pdf.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Spire.XLS, Version=7.9.0.55040, Culture=neutral, PublicKeyToken=663f351905198cb3, processorArchitecture=MSIL">
+      <HintPath>..\packages\FreeSpire.XLS.7.9\lib\net40\Spire.XLS.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -131,9 +147,9 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-	<None Include="App.Production.config">
-     <DependentUpon>App.config</DependentUpon>
-   </None>
+    <None Include="App.Production.config">
+      <DependentUpon>App.config</DependentUpon>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ProjectInstaller.resx">
@@ -168,6 +184,6 @@
   </Target>
   -->
   <Target Name="AfterBuild">
-  <TransformXml Source="@(AppConfigWithTargetPath)" Transform="$(ProjectConfigTransformFileName)" Destination="@(AppConfigWithTargetPath->'$(OutDir)%(TargetPath)')" />
-</Target>
+    <TransformXml Source="@(AppConfigWithTargetPath)" Transform="$(ProjectConfigTransformFileName)" Destination="@(AppConfigWithTargetPath->'$(OutDir)%(TargetPath)')" />
+  </Target>
 </Project>
