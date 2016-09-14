@@ -1,4 +1,5 @@
 rem uninstall existing service
+sc.exe \\krr-app-palbp01 Stop "ArcelorMittal.PrintService"
 sc.exe \\krr-app-palbp01 Delete "ArcelorMittal.PrintService"
 rem copy new version
 xcopy %WORKSPACE%\PrintLabelService\bin\Production\*.* \\krr-app-palbp01\Nikama\print_service /Y
