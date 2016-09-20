@@ -6,4 +6,4 @@ rem install existing service
 echo off
 C:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /username=%PRINT_USER% /password=%PRINT_PASS% /unattended "C:\Nikama\print_service\PrintLabelService.exe"
 echo on
-net stop "ArcelorMittal.PrintService"
+rem net stop "ArcelorMittal.PrintService"
