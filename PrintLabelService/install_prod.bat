@@ -6,3 +6,4 @@ xcopy %WORKSPACE%\PrintLabelService\bin\Production\*.* \\krr-app-palbp01\Nikama\
 rem install existing service
 rem echo off
 sc.exe \\krr-app-palbp01 Create "ArcelorMittal.PrintService" binPath="C:\Nikama\print_service\PrintLabelService.exe" start=auto obj=%PRINT_USER% password=%PRINT_PASS%
+sc.exe \\krr-app-palbp01 Start "ArcelorMittal.PrintService"
