@@ -187,7 +187,7 @@ namespace PrintWindowsService
             }
             catch (Exception ex)
             {
-                throw ex;
+                return ex.Message;
             }
             finally
             {
