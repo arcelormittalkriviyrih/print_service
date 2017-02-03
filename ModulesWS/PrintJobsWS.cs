@@ -129,39 +129,29 @@ namespace PrintWindowsService
         /// <summary>	Default constructor. </summary>
         public PrintJobs()
         {
-            SenderMonitorEvent.sendMonitorEvent(EventLog, "Initializing print service", EventLogEntryType.Information);
+            // Set up a timer to trigger every print task frequency.
+            int printTaskFrequencyInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPrintTaskFrequencyName]);
+            //dbConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings[cConnectionStringName].ConnectionString;
+            odataServiceUrl = System.Configuration.ConfigurationManager.AppSettings[cOdataService];
 
-            try
-            {
-                // Set up a timer to trigger every print task frequency.
-                int printTaskFrequencyInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPrintTaskFrequencyName]);
-                //dbConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings[cConnectionStringName].ConnectionString;
-                odataServiceUrl = System.Configuration.ConfigurationManager.AppSettings[cOdataService];
+            PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
+            PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
+            PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";            
+            //PrintLabelWS.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath];
+            PrintLabelWS.SMTPHost = System.Configuration.ConfigurationManager.AppSettings[cSMTPHost];
+            PrintLabelWS.SMTPPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cSMTPPort]);
 
-                PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
-                PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
-                PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";
-                //PrintLabelWS.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath];
-                PrintLabelWS.SMTPHost = System.Configuration.ConfigurationManager.AppSettings[cSMTPHost];
-                PrintLabelWS.SMTPPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cSMTPPort]);
+            wmiProductInfo = new PrintServiceProductInfo(cServiceTitle,
+                                                         Environment.MachineName,
+                                                         Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                                                         DateTime.Now,
+                                                         odataServiceUrl);
 
-                wmiProductInfo = new PrintServiceProductInfo(cServiceTitle,
-                                                             Environment.MachineName,
-                                                             Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                                                             DateTime.Now,
-                                                             odataServiceUrl);
+            printTimer = new System.Timers.Timer();
+            printTimer.Interval = printTaskFrequencyInSeconds * 1000; // seconds to milliseconds
+            printTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.OnPrintTimer);
 
-                printTimer = new System.Timers.Timer();
-                printTimer.Interval = printTaskFrequencyInSeconds * 1000; // seconds to milliseconds
-                printTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.OnPrintTimer);
-
-                SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print Task Frequncy = {0}", printTaskFrequencyInSeconds), EventLogEntryType.Information);
-            }
-            catch (Exception ex)
-            {
-                SenderMonitorEvent.sendMonitorEvent(EventLog, "Failed to initialize print service: "+ex.ToString(), EventLogEntryType.Error);
-                throw;
-            }            
+            SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print Task Frequncy = {0}", printTaskFrequencyInSeconds), EventLogEntryType.Information);
         }
 
         #endregion
