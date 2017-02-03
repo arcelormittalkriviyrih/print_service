@@ -129,29 +129,39 @@ namespace PrintWindowsService
         /// <summary>	Default constructor. </summary>
         public PrintJobs()
         {
-            // Set up a timer to trigger every print task frequency.
-            int printTaskFrequencyInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPrintTaskFrequencyName]);
-            //dbConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings[cConnectionStringName].ConnectionString;
-            odataServiceUrl = System.Configuration.ConfigurationManager.AppSettings[cOdataService];
+            SenderMonitorEvent.sendMonitorEvent(EventLog, "Initializing print service", EventLogEntryType.Information);
 
-            PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
-            PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
-            PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";            
-            //PrintLabelWS.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath];
-            PrintLabelWS.SMTPHost = System.Configuration.ConfigurationManager.AppSettings[cSMTPHost];
-            PrintLabelWS.SMTPPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cSMTPPort]);
+            try
+            {
+                // Set up a timer to trigger every print task frequency.
+                int printTaskFrequencyInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPrintTaskFrequencyName]);
+                //dbConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings[cConnectionStringName].ConnectionString;
+                odataServiceUrl = System.Configuration.ConfigurationManager.AppSettings[cOdataService];
 
-            wmiProductInfo = new PrintServiceProductInfo(cServiceTitle,
-                                                         Environment.MachineName,
-                                                         Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                                                         DateTime.Now,
-                                                         odataServiceUrl);
+                PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
+                PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
+                PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";
+                //PrintLabelWS.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath];
+                PrintLabelWS.SMTPHost = System.Configuration.ConfigurationManager.AppSettings[cSMTPHost];
+                PrintLabelWS.SMTPPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cSMTPPort]);
 
-            printTimer = new System.Timers.Timer();
-            printTimer.Interval = printTaskFrequencyInSeconds * 1000; // seconds to milliseconds
-            printTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.OnPrintTimer);
+                wmiProductInfo = new PrintServiceProductInfo(cServiceTitle,
+                                                             Environment.MachineName,
+                                                             Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                                                             DateTime.Now,
+                                                             odataServiceUrl);
 
-            SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print Task Frequncy = {0}", printTaskFrequencyInSeconds), EventLogEntryType.Information);
+                printTimer = new System.Timers.Timer();
+                printTimer.Interval = printTaskFrequencyInSeconds * 1000; // seconds to milliseconds
+                printTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.OnPrintTimer);
+
+                SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print Task Frequncy = {0}", printTaskFrequencyInSeconds), EventLogEntryType.Information);
+            }
+            catch (Exception ex)
+            {
+                SenderMonitorEvent.sendMonitorEvent(EventLog, "Failed to initialize print service: "+ex.ToString(), EventLogEntryType.Error);
+                throw;
+            }            
         }
 
         #endregion
