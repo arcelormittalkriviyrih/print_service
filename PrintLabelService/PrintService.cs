@@ -23,6 +23,7 @@ namespace PrintWindowsService
 
         protected override void OnStart(string[] args)
 		{
+            RequestAdditionalTime(60000);//60 sec
             pJobs.StartJob();
         }
 
