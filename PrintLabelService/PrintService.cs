@@ -12,7 +12,7 @@ namespace PrintWindowsService
         public PrintService()
 		{
 			InitializeComponent();
-            RequestAdditionalTime(60000);//60 sec
+
             // Set up a timer to trigger every print task frequency.
             pJobs = new PrintJobs();
         }
