@@ -328,29 +328,41 @@ namespace PrintWindowsService
             }
             catch (Exception ex)
             {
-                string details = string.Empty;
-                if (ex is System.Net.WebException)
+                try
                 {
-                    var resp = new StreamReader((ex as System.Net.WebException).Response.GetResponseStream()).ReadToEnd();
+                    string details = string.Empty;
+                    if (ex is System.Net.WebException)
+                    {
+                        var resp = new StreamReader((ex as System.Net.WebException).Response.GetResponseStream()).ReadToEnd();
 
-					try
-					{
-						dynamic obj = JsonConvert.DeserializeObject(resp);
-						details = obj.error.message;
-					}
-					catch
-					{
-						details = resp;
-					}
+                        try
+                        {
+                            dynamic obj = JsonConvert.DeserializeObject(resp);
+                            details = obj.error.message;
+                        }
+                        catch
+                        {
+                            details = resp;
+                        }
+                    }
+                    lLastError = "Error getting jobs: " + ex.ToString() + " Details: " + details;
+                    SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
+                    wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                }catch (Exception exc)
+                {
+                    SenderMonitorEvent.sendMonitorEvent(EventLog, exc.Message, EventLogEntryType.Error);
                 }
-                lLastError = "Error getting jobs: " + ex.ToString() + " Details: " + details;
-                SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
-                wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
             }
-            wmiProductInfo.PrintedLabelsCount += CountJobsToProcess;
-            wmiProductInfo.PublishInfo();
-            SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print is done. {0} tasks", CountJobsToProcess), EventLogEntryType.Information);
-
+            try
+            {
+                wmiProductInfo.PrintedLabelsCount += CountJobsToProcess;
+                wmiProductInfo.PublishInfo();
+                SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print is done. {0} tasks", CountJobsToProcess), EventLogEntryType.Information);
+            }
+            catch (Exception exc)
+            {
+                SenderMonitorEvent.sendMonitorEvent(EventLog, exc.Message, EventLogEntryType.Error);
+            }
             printTimer.Start();
         }
         #endregion
