@@ -11,5 +11,6 @@ net start "ArcelorMittal.PrintService"
 net stop "ArcelorMittal.PrintService"
 sc.exe config "ArcelorMittal.PrintService" obj=%PRINT_USER% password=%PRINT_PASS%
 rem configure delayed service
-sc.exe config "ArcelorMittal.PrintService" start=delayed-auto
+rem sc.exe config "ArcelorMittal.PrintService" start=delayed-auto
+sc.exe config "ArcelorMittal.PrintService" start=demand
 rem net stop "ArcelorMittal.PrintService"
