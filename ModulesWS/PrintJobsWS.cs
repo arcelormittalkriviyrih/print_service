@@ -154,7 +154,7 @@ namespace PrintWindowsService
             }
             catch (Exception ex)
             {                
-                SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Failed to initialize WMI = {0}", ex.ToString()), EventLogEntryType.Error);
+                //SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Failed to initialize WMI = {0}", ex.ToString()), EventLogEntryType.Error);
             }
 
             printTimer = new System.Timers.Timer();
