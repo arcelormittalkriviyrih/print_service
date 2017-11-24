@@ -133,6 +133,7 @@ namespace PrintWindowsService
             int printTaskFrequencyInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPrintTaskFrequencyName]);
             //dbConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings[cConnectionStringName].ConnectionString;
             odataServiceUrl = System.Configuration.ConfigurationManager.AppSettings[cOdataService];
+            SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("ODataServiceUrl = {0}", odataServiceUrl), EventLogEntryType.Information);
 
             PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
             PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
@@ -140,12 +141,21 @@ namespace PrintWindowsService
             //PrintLabelWS.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath];
             PrintLabelWS.SMTPHost = System.Configuration.ConfigurationManager.AppSettings[cSMTPHost];
             PrintLabelWS.SMTPPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cSMTPPort]);
+            SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("SMTP config = {0}:{1}", PrintLabelWS.SMTPHost, PrintLabelWS.SMTPPort), EventLogEntryType.Information);
 
-            wmiProductInfo = new PrintServiceProductInfo(cServiceTitle,
+            
+            try
+            {
+                wmiProductInfo = new PrintServiceProductInfo(cServiceTitle,
                                                          Environment.MachineName,
                                                          Assembly.GetExecutingAssembly().GetName().Version.ToString(),
                                                          DateTime.Now,
                                                          odataServiceUrl);
+            }
+            catch (Exception ex)
+            {                
+                SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Failed to initialize WMI = {0}", ex.ToString()), EventLogEntryType.Error);
+            }
 
             printTimer = new System.Timers.Timer();
             printTimer.Interval = printTaskFrequencyInSeconds * 1000; // seconds to milliseconds
@@ -263,7 +273,8 @@ namespace PrintWindowsService
                                 if (PrintLabelWS.PrintTemplate(job))
                                 {
                                     printState = "Done";
-                                    wmiProductInfo.LastActivityTime = DateTime.Now;
+                                    if (wmiProductInfo != null)
+                                        wmiProductInfo.LastActivityTime = DateTime.Now;
                                 }
                                 else
                                 {
@@ -276,7 +287,8 @@ namespace PrintWindowsService
                                 if (PrintLabelWS.EmailTemplate(job))
                                 {
                                     printState = "Done";
-                                    wmiProductInfo.LastActivityTime = DateTime.Now;
+                                    if (wmiProductInfo != null)
+                                        wmiProductInfo.LastActivityTime = DateTime.Now;
                                 }
                                 else
                                 {
@@ -287,7 +299,8 @@ namespace PrintWindowsService
                             SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, printState == "Failed" ? EventLogEntryType.Error : EventLogEntryType.Information);
                             if (printState == "Failed")
                             {
-                                wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                                if (wmiProductInfo != null)
+                                    wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                             }
                         }
                         else
@@ -295,7 +308,8 @@ namespace PrintWindowsService
                             printState = "Failed";
                             lLastError = string.Format("Excel template is empty. JobOrderID: {0}. FactoryNumber: {1}.", job.JobOrderID, lFactoryNumber);
                             SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
-                            wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                            if (wmiProductInfo != null)
+                                wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                         }
 
                         if (printState == "Done")
@@ -322,7 +336,8 @@ namespace PrintWindowsService
                         }
                         lLastError = "JobOrderID: " + lLastJobID + ". FactoryNumber: " +lFactoryNumber+ " Error: " + ex.ToString() + " Details: " + details;
                         SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
-                        wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                        if (wmiProductInfo != null)
+                            wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                     }
                 }
             }
@@ -347,7 +362,8 @@ namespace PrintWindowsService
                     }
                     lLastError = "Error getting jobs: " + ex.ToString() + " Details: " + details;
                     SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
-                    wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                    if (wmiProductInfo != null)
+                        wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                 }catch (Exception exc)
                 {
                     SenderMonitorEvent.sendMonitorEvent(EventLog, exc.Message, EventLogEntryType.Error);
@@ -355,8 +371,11 @@ namespace PrintWindowsService
             }
             try
             {
-                wmiProductInfo.PrintedLabelsCount += CountJobsToProcess;
-                wmiProductInfo.PublishInfo();
+                if (wmiProductInfo != null)
+                {
+                    wmiProductInfo.PrintedLabelsCount += CountJobsToProcess;
+                    wmiProductInfo.PublishInfo();
+                }
                 SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print is done. {0} tasks", CountJobsToProcess), EventLogEntryType.Information);
             }
             catch (Exception exc)
