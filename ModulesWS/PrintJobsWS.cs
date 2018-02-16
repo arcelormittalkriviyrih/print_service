@@ -8,6 +8,9 @@ using CommonEventSender;
 using JobOrdersService;
 using JobPropsService;
 using Newtonsoft.Json;
+using System.Collections.Concurrent;
+using System.Threading;
+using System.Linq;
 
 namespace PrintWindowsService
 {
@@ -33,12 +36,12 @@ namespace PrintWindowsService
         /// The name of the configuration parameter for the print task frequency in seconds.
         /// </summary>
         private const string cPrintTaskFrequencyName = "PrintTaskFrequency";
-        
+
         /// <summary>
         /// The name of the configuration parameter for the Odata service url.
         /// </summary>
         private const string cOdataService = "OdataServiceUri";
-        
+
         ///// <summary>
         ///// The name of the configuration parameter for the Ghost Script path
         ///// </summary>
@@ -69,6 +72,8 @@ namespace PrintWindowsService
 
         /// <summary>	The event log. </summary>
         private EventLog eventLog;
+
+        private ConcurrentDictionary<string, Thread> printThreadConcurrentDictionary = new ConcurrentDictionary<string, Thread>();
 
         #endregion
 
@@ -137,13 +142,13 @@ namespace PrintWindowsService
 
             PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
             PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
-            PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";            
+            PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";
             //PrintLabelWS.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath];
             PrintLabelWS.SMTPHost = System.Configuration.ConfigurationManager.AppSettings[cSMTPHost];
             PrintLabelWS.SMTPPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cSMTPPort]);
             SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("SMTP config = {0}:{1}", PrintLabelWS.SMTPHost, PrintLabelWS.SMTPPort), EventLogEntryType.Information);
 
-            
+
             try
             {
                 wmiProductInfo = new PrintServiceProductInfo(cServiceTitle,
@@ -153,7 +158,7 @@ namespace PrintWindowsService
                                                          odataServiceUrl);
             }
             catch (Exception ex)
-            {                
+            {
                 //SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Failed to initialize WMI = {0}", ex.ToString()), EventLogEntryType.Error);
             }
 
@@ -231,113 +236,52 @@ namespace PrintWindowsService
         /// </summary>
         public void OnPrintTimer(object sender, System.Timers.ElapsedEventArgs args)
         {
-            SenderMonitorEvent.sendMonitorEvent(EventLog, "Monitoring the print activity", EventLogEntryType.Information);
-            printTimer.Stop();
-
             string lLastError = string.Empty;
-            int lLastJobID = 0;
-            int CountJobsToProcess = 0;
-            string lFactoryNumber = string.Empty;
-            
+            printTimer.Stop();
+            SenderMonitorEvent.sendMonitorEvent(EventLog, "Monitoring the print activity", EventLogEntryType.Information);
+
             try
             {
-                string printState;
+                RemoveAllNotAliveThreads();
+                var printerAddresesToIgnore = printThreadConcurrentDictionary.Select(t => t.Key);
+
                 LabeldbData lDbData = new LabeldbData(odataServiceUrl);
                 JobOrders jobsToProcess = lDbData.getJobsToProcess();
-                CountJobsToProcess = jobsToProcess.JobOrdersObj.Count;
+                int CountJobsToProcess = jobsToProcess.JobOrdersObj.Count;
                 SenderMonitorEvent.sendMonitorEvent(EventLog, "Jobs to process: " + CountJobsToProcess, EventLogEntryType.Information);
-                foreach (JobOrders.JobOrdersValue jobVal in jobsToProcess.JobOrdersObj)
-                {
-                    try
-                    {                        
-                        PrintJobProps job = lDbData.getJobData(EventLog, jobVal);                                                
-                        lLastJobID = job.JobOrderID;
-                        lFactoryNumber = job.getLabelParameter("FactoryNumber", "FactoryNumber");
-                        if (string.IsNullOrEmpty(job.IpAddress))
-                            throw new Exception(string.Format("Printer IP address missing for printer {0}.", job.PrinterNo));
 
-                        if (job.isExistsTemplate)
+                if (CountJobsToProcess > 0)
+                {
+                    var groupedJobsToProcess = jobsToProcess.JobOrdersObj.GroupBy(j => j.PrinterIP);
+                    foreach (var jobVal in groupedJobsToProcess)
+                    {
+                        try
                         {
-                            if (job.Command == "Print")
+                            JobOrders.JobOrdersValue[] printerJobArray = jobVal.ToArray();
+
+                            if (string.IsNullOrEmpty(jobVal.Key))
                             {
-                                string printerStatus = PrintLabelWS.getPrinterStatus(job.IpAddress, job.PrinterNo);
-                                Requests.updatePrinterStatus(odataServiceUrl, job.PrinterNo, printerStatus);
-                                if (!printerStatus.Equals("OK"))
-                                {
-                                    throw new Exception(string.Format("Cannot print to {0}. Not valid printer status: {1}", job.PrinterNo, printerStatus));
-                                }
-                            }
-                            job.prepareTemplate(PrintLabelWS.ExcelTemplateFile);                                                        
-                            if (job.Command == "Print")
-                            {
-                                if (PrintLabelWS.PrintTemplate(job))
-                                {
-                                    printState = "Done";
-                                    if (wmiProductInfo != null)
-                                        wmiProductInfo.LastActivityTime = DateTime.Now;
-                                }
-                                else
-                                {
-                                    printState = "Failed";
-                                }
-                                lLastError = string.Format("JobOrderID: {0}. FactoryNumber: {3}. Print to: {1}. Status: {2}", job.JobOrderID, job.PrinterName, printState, lFactoryNumber);
+                                PrintJobProps job = lDbData.getJobData(EventLog, printerJobArray.First());
+                                throw new Exception(string.Format("Printer IP address missing for printer {0}.", job.PrinterNo));
                             }
                             else
                             {
-                                if (PrintLabelWS.EmailTemplate(job))
-                                {
-                                    printState = "Done";
-                                    if (wmiProductInfo != null)
-                                        wmiProductInfo.LastActivityTime = DateTime.Now;
-                                }
+                                Thread printThread = new Thread(DoPrintWork);
+                                if (printThreadConcurrentDictionary.TryAdd(jobVal.Key, printThread))
+                                    printThread.Start(printerJobArray);
                                 else
-                                {
-                                    printState = "Failed";
-                                }
-                                lLastError = string.Format("JobOrderID: {0}. FactoryNumber: {3}. Mail to: {1}. Status: {2}", job.JobOrderID, job.CommandRule, printState, lFactoryNumber);
-                            }
-                            SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, printState == "Failed" ? EventLogEntryType.Error : EventLogEntryType.Information);
-                            if (printState == "Failed")
-                            {
-                                if (wmiProductInfo != null)
-                                    wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                                    SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print Thread can't be created for printer IP {0}.", jobVal.Key), EventLogEntryType.Warning);
+                                //throw new Exception(string.Format("Print Thread can't be created for printer IP {0}.", jobVal.Key));
                             }
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            printState = "Failed";
-                            lLastError = string.Format("Excel template is empty. JobOrderID: {0}. FactoryNumber: {1}.", job.JobOrderID, lFactoryNumber);
+                            string details = GetWebExceptionDetails(ex);
+                            lLastError = "Error: " + ex.ToString() + " Details: " + details;
                             SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
                             if (wmiProductInfo != null)
                                 wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                         }
-
-                        if (printState == "Done")
-                        {
-                            Requests.updateJobStatus(odataServiceUrl, job.JobOrderID, printState);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        string details = string.Empty;
-                        if (ex is System.Net.WebException)
-                        {
-                            var resp = new StreamReader((ex as System.Net.WebException).Response.GetResponseStream()).ReadToEnd();
-
-							try
-							{
-								dynamic obj = JsonConvert.DeserializeObject(resp);
-								details = obj.error.message;
-							}
-							catch
-							{
-								details = resp;
-							}
-                        }
-                        lLastError = "JobOrderID: " + lLastJobID + ". FactoryNumber: " +lFactoryNumber+ " Error: " + ex.ToString() + " Details: " + details;
-                        SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
-                        if (wmiProductInfo != null)
-                            wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                     }
                 }
             }
@@ -345,45 +289,171 @@ namespace PrintWindowsService
             {
                 try
                 {
-                    string details = string.Empty;
-                    if (ex is System.Net.WebException)
-                    {
-                        var resp = new StreamReader((ex as System.Net.WebException).Response.GetResponseStream()).ReadToEnd();
-
-                        try
-                        {
-                            dynamic obj = JsonConvert.DeserializeObject(resp);
-                            details = obj.error.message;
-                        }
-                        catch
-                        {
-                            details = resp;
-                        }
-                    }
+                    string details = GetWebExceptionDetails(ex);
                     lLastError = "Error getting jobs: " + ex.ToString() + " Details: " + details;
                     SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
                     if (wmiProductInfo != null)
                         wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
-                }catch (Exception exc)
+                }
+                catch (Exception exc)
                 {
                     SenderMonitorEvent.sendMonitorEvent(EventLog, exc.Message, EventLogEntryType.Error);
                 }
             }
-            try
+            finally
             {
-                if (wmiProductInfo != null)
-                {
-                    wmiProductInfo.PrintedLabelsCount += CountJobsToProcess;
-                    wmiProductInfo.PublishInfo();
-                }
-                SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print is done. {0} tasks", CountJobsToProcess), EventLogEntryType.Information);
+                printTimer.Start();
             }
-            catch (Exception exc)
-            {
-                SenderMonitorEvent.sendMonitorEvent(EventLog, exc.Message, EventLogEntryType.Error);
-            }
-            printTimer.Start();
         }
+
+        private string GetWebExceptionDetails(Exception ex)
+        {
+            string details = string.Empty;
+            if (ex is System.Net.WebException)
+            {
+                var resp = new StreamReader((ex as System.Net.WebException).Response.GetResponseStream()).ReadToEnd();
+
+                try
+                {
+                    dynamic obj = JsonConvert.DeserializeObject(resp);
+                    details = obj.error.message;
+                }
+                catch
+                {
+                    details = resp;
+                }
+            }
+            return details;
+        }
+
+        private void DoPrintWork(object data)
+        {
+            if (data is JobOrders.JobOrdersValue[])
+            {
+                int CountJobsToProcess = 0;
+                string lLastError = string.Empty;
+
+                try
+                {
+                    string lPrintState;
+                    int lLastJobID = 0;
+                    string lFactoryNumber = string.Empty;
+                    LabeldbData lDbData = new LabeldbData(odataServiceUrl);
+                    JobOrders.JobOrdersValue[] jobValues = data as JobOrders.JobOrdersValue[];
+                    CountJobsToProcess = jobValues.Length;
+
+                    foreach (JobOrders.JobOrdersValue jobValue in jobValues)
+                    {
+                        try
+                        {
+                            PrintJobProps job = lDbData.getJobData(EventLog, jobValue);
+                            lLastJobID = job.JobOrderID;
+                            lFactoryNumber = job.getLabelParameter("FactoryNumber", "FactoryNumber");
+
+                            if (job.isExistsTemplate)
+                            {
+                                if (job.Command == "Print")
+                                {
+                                    string printerStatus = PrintLabelWS.getPrinterStatus(job.IpAddress, job.PrinterNo);
+                                    Requests.updatePrinterStatus(odataServiceUrl, job.PrinterNo, printerStatus);
+                                    if (!printerStatus.Equals("OK"))
+                                    {
+                                        throw new Exception(string.Format("Cannot print to {0}. Not valid printer status: {1}", job.PrinterNo, printerStatus));
+                                    }
+                                }
+                                job.prepareTemplate(PrintLabelWS.ExcelTemplateFile);
+                                if (job.Command == "Print")
+                                {
+                                    if (PrintLabelWS.PrintTemplate(job))
+                                    {
+                                        lPrintState = "Done";
+                                        if (wmiProductInfo != null)
+                                            wmiProductInfo.LastActivityTime = DateTime.Now;
+                                    }
+                                    else
+                                    {
+                                        lPrintState = "Failed";
+                                    }
+                                    lLastError = string.Format("JobOrderID: {0}. FactoryNumber: {3}. Print to: {1}. Status: {2}", job.JobOrderID, job.PrinterName, lPrintState, lFactoryNumber);
+                                }
+                                else
+                                {
+                                    if (PrintLabelWS.EmailTemplate(job))
+                                    {
+                                        lPrintState = "Done";
+                                        if (wmiProductInfo != null)
+                                            wmiProductInfo.LastActivityTime = DateTime.Now;
+                                    }
+                                    else
+                                    {
+                                        lPrintState = "Failed";
+                                    }
+                                    lLastError = string.Format("JobOrderID: {0}. FactoryNumber: {3}. Mail to: {1}. Status: {2}", job.JobOrderID, job.CommandRule, lPrintState, lFactoryNumber);
+                                }
+                                SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, lPrintState == "Failed" ? EventLogEntryType.Error : EventLogEntryType.Information);
+                                if (lPrintState == "Failed")
+                                {
+                                    if (wmiProductInfo != null)
+                                        wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                                }
+                            }
+                            else
+                            {
+                                lPrintState = "Failed";
+                                lLastError = string.Format("Excel template is empty. JobOrderID: {0}. FactoryNumber: {1}.", job.JobOrderID, lFactoryNumber);
+                                SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
+                                if (wmiProductInfo != null)
+                                    wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                            }
+
+                            if (lPrintState == "Done")
+                            {
+                                Requests.updateJobStatus(odataServiceUrl, job.JobOrderID, lPrintState);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            string details = GetWebExceptionDetails(ex);
+                            lLastError = "JobOrderID: " + lLastJobID + ". FactoryNumber: " + lFactoryNumber + " Error: " + ex.ToString() + " Details: " + details;
+                            SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
+                            if (wmiProductInfo != null)
+                                wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+                        }
+                    }
+                }
+                finally
+                {
+                    try
+                    {
+                        if (wmiProductInfo != null)
+                        {
+                            wmiProductInfo.PrintedLabelsCount += CountJobsToProcess;
+                            wmiProductInfo.PublishInfo();
+                        }
+                        SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print is done. {0} tasks", CountJobsToProcess), EventLogEntryType.Information);
+                    }
+                    catch (Exception exc)
+                    {
+                        SenderMonitorEvent.sendMonitorEvent(EventLog, exc.Message, EventLogEntryType.Error);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Removes all done printer Threads
+        /// </summary>
+        private void RemoveAllNotAliveThreads()
+        {
+            var lvThreadsToRemove = printThreadConcurrentDictionary.Where(t => t.Value.IsAlive == false).Select(t => t.Key);
+            foreach (var lvThreadToRemove in lvThreadsToRemove)
+            {
+                Thread lvRemovedThread;
+                if (printThreadConcurrentDictionary.TryRemove(lvThreadToRemove, out lvRemovedThread) == false)
+                    SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Thread Printer IP:{0} Can't be removed.", lvThreadToRemove), EventLogEntryType.Warning);
+            }
+        }
+
         #endregion
     }
 
@@ -429,9 +499,9 @@ namespace PrintWindowsService
         }
 
         /// <summary>
-		/// Printer NO
-		/// </summary>
-		public string PrinterNo
+        /// Printer NO
+        /// </summary>
+        public string PrinterNo
         {
             get { return getEquipmentProperty("PRINTER_NO"); }
         }
