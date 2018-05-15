@@ -336,7 +336,7 @@ namespace PrintWindowsService
 			}
 			catch (Exception ex)
 			{
-				SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not convert label template to pdf. Error: " + ex.ToString(), EventLogEntryType.Error);
+				SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not convert Excel label template to PDF/BMP. Error: " + ex.ToString(), EventLogEntryType.Error);
 				return false;
 			}
             return boolConvertLabel;
