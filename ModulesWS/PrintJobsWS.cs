@@ -404,6 +404,14 @@ namespace PrintWindowsService
                                     if (wmiProductInfo != null)
                                         wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                                 }
+
+                                //Clear All PrintLabelWS Temp Files
+                                if (File.Exists(printLabelWS.BMPTemplateFile))
+                                    File.Delete(printLabelWS.BMPTemplateFile);
+                                if (File.Exists(printLabelWS.PDFTemplateFile))
+                                    File.Delete(printLabelWS.PDFTemplateFile);
+                                if (File.Exists(printLabelWS.ExcelTemplateFile))
+                                    File.Delete(printLabelWS.ExcelTemplateFile);
                             }
                             else
                             {
