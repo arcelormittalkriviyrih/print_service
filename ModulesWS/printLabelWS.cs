@@ -14,13 +14,13 @@ namespace PrintWindowsService
 	/// <summary>
 	/// Class for initialising of parameters label and printing of the set label
 	/// </summary>
-	public static class PrintLabelWS
+	public class PrintLabelWS
 	{
 		//public static int pingTimeoutInSeconds;
 		public static EventLog eventLog;
-		public static string ExcelTemplateFile;
-		public static string PDFTemplateFile;
-		public static string BMPTemplateFile;		
+		public string ExcelTemplateFile;
+		public string PDFTemplateFile;
+		public string BMPTemplateFile;		
 		//public static string ghostScriptPath;
 		public static string SMTPHost;
 		public static int SMTPPort;
@@ -28,7 +28,7 @@ namespace PrintWindowsService
 		/// <summary>
 		/// Printing of the prepared label
 		/// </summary>
-		public static bool PrintTemplate(PrintJobProps jobProps)
+		public bool PrintTemplate(PrintJobProps jobProps)
 		{
             //перед печатью если задан IP сделать пинг
    //         if ((pingTimeoutInSeconds > 0) && (jobProps.IpAddress != ""))
@@ -59,7 +59,7 @@ namespace PrintWindowsService
 		/// <summary>	Converts this object to a PDF. </summary>
 		///
 		/// <returns>	true if it succeeds, false if it fails. </returns>
-		private static bool ConvertToPDF()
+		private bool ConvertToPDF()
 		{
 			//File.Delete(PDFTemplateFile);
 			//ProcessStartInfo startInfo = new ProcessStartInfo();
@@ -86,7 +86,7 @@ namespace PrintWindowsService
 		/// <summary>	Converts this object to a BMP. </summary>
 		///
 		/// <returns>	true if it succeeds, false if it fails. </returns>
-		private static bool ConvertToBMP()
+		private bool ConvertToBMP()
 		{
             //File.Delete(PDFTemplateFile);
             //ProcessStartInfo startInfo = new ProcessStartInfo();
@@ -143,9 +143,8 @@ namespace PrintWindowsService
 		}*/
         
 
-        public static string getPrinterStatus(string printerIpAddress, string printerNo)
+        public string getPrinterStatus(string printerIpAddress, string printerNo)
         {
-            
             ZebraPrinterConnection connection = null;
             try
             {
@@ -201,7 +200,7 @@ namespace PrintWindowsService
         /// <param name="printerName">	Name of the printer. </param>
         ///
         /// <returns>	true if it succeeds, false if it fails. </returns>
-        private static bool PrintZebra(string printerIpAddress, string width, string height, int JobOrderId, string printerNo)
+        private bool PrintZebra(string printerIpAddress, string width, string height, int JobOrderId, string printerNo)
 		{
             bool result = true;
 			ZebraPrinterConnection connection = null;
@@ -282,7 +281,7 @@ namespace PrintWindowsService
 		/// <param name="printerName">	Name of the printer. </param>
 		///
 		/// <returns>	true if it succeeds, false if it fails. </returns>
-		private static bool PrintBMP(string printerName)
+		private bool PrintBMP(string printerName)
 		{
 			try
 			{
@@ -314,7 +313,7 @@ namespace PrintWindowsService
 		/// <param name="jobProps">	The job properties. </param>
 		///
 		/// <returns>	true if it succeeds, false if it fails. </returns>
-		private static bool PrepareTemplate(PrintJobProps jobProps, bool isPDF)
+		private bool PrepareTemplate(PrintJobProps jobProps, bool isPDF)
 		{
             Boolean boolConvertLabel = false;
 			LabelTemplate lTemplate = new LabelTemplate(ExcelTemplateFile);
@@ -347,7 +346,7 @@ namespace PrintWindowsService
 		/// <param name="emailAddresses">	The email addresses. </param>
 		///
 		/// <returns>	true if it succeeds, false if it fails. </returns>
-		private static bool EmailPDF(string emailAddresses)
+		private bool EmailPDF(string emailAddresses)
 		{
 			MailMessage mail;
 			try
@@ -389,7 +388,7 @@ namespace PrintWindowsService
 		/// <summary>
 		/// Email of the prepared label
 		/// </summary>
-		public static bool EmailTemplate(PrintJobProps jobProps)
+		public bool EmailTemplate(PrintJobProps jobProps)
 		{
 			Boolean boolEmailLabel = false;
 			if (PrepareTemplate(jobProps, true))

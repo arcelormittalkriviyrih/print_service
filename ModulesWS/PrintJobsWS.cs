@@ -140,9 +140,6 @@ namespace PrintWindowsService
             odataServiceUrl = System.Configuration.ConfigurationManager.AppSettings[cOdataService];
             SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("ODataServiceUrl = {0}", odataServiceUrl), EventLogEntryType.Information);
 
-            PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
-            PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
-            PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";
             //PrintLabelWS.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath];
             PrintLabelWS.SMTPHost = System.Configuration.ConfigurationManager.AppSettings[cSMTPHost];
             PrintLabelWS.SMTPPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cSMTPPort]);
@@ -270,7 +267,7 @@ namespace PrintWindowsService
                                 if (printThreadConcurrentDictionary.TryAdd(jobVal.Key, printThread))
                                     printThread.Start(printerJobArray);
                                 else
-                                    SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print Thread can't be created for printer IP {0}.", jobVal.Key), EventLogEntryType.Warning);
+                                    SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print Thread already exists, will be printed later, PrinterIP={0}.", jobVal.Key), EventLogEntryType.Information);
                                 //throw new Exception(string.Format("Print Thread can't be created for printer IP {0}.", jobVal.Key));
                             }
                         }
@@ -352,19 +349,30 @@ namespace PrintWindowsService
 
                             if (job.isExistsTemplate)
                             {
+                                string randomFileName = Path.GetRandomFileName().Replace(".", "");
+                                //PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
+                                //PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
+                                //PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";
+                                PrintLabelWS printLabelWS = new PrintLabelWS()
+                                {
+                                    BMPTemplateFile = Path.GetTempPath() + randomFileName + ".xlsx",
+                                    ExcelTemplateFile = Path.GetTempPath() + randomFileName + ".pdf",
+                                    PDFTemplateFile = Path.GetTempPath() + randomFileName + ".bmp"
+                                };                                 
+
                                 if (job.Command == "Print")
                                 {
-                                    string printerStatus = PrintLabelWS.getPrinterStatus(job.IpAddress, job.PrinterNo);
+                                    string printerStatus = printLabelWS.getPrinterStatus(job.IpAddress, job.PrinterNo);
                                     Requests.updatePrinterStatus(odataServiceUrl, job.PrinterNo, printerStatus);
                                     if (!printerStatus.Equals("OK"))
                                     {
                                         throw new Exception(string.Format("Cannot print to {0}. Not valid printer status: {1}", job.PrinterNo, printerStatus));
                                     }
                                 }
-                                job.prepareTemplate(PrintLabelWS.ExcelTemplateFile);
+                                job.prepareTemplate(printLabelWS.ExcelTemplateFile);
                                 if (job.Command == "Print")
                                 {
-                                    if (PrintLabelWS.PrintTemplate(job))
+                                    if (printLabelWS.PrintTemplate(job))
                                     {
                                         lPrintState = "Done";
                                         if (wmiProductInfo != null)
@@ -378,7 +386,7 @@ namespace PrintWindowsService
                                 }
                                 else
                                 {
-                                    if (PrintLabelWS.EmailTemplate(job))
+                                    if (printLabelWS.EmailTemplate(job))
                                     {
                                         lPrintState = "Done";
                                         if (wmiProductInfo != null)
