@@ -254,7 +254,7 @@ namespace PrintWindowsService
                     {
                         try
                         {
-                            JobOrders.JobOrdersValue[] printerJobArray = jobVal.ToArray();
+                            JobOrders.JobOrdersValue[] printerJobArray = jobVal.OrderBy(o => o.ID).ToArray();
 
                             if (string.IsNullOrEmpty(jobVal.Key))
                             {
