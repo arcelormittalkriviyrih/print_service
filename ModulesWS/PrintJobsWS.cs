@@ -337,10 +337,12 @@ namespace PrintWindowsService
                     string lFactoryNumber = string.Empty;
                     LabeldbData lDbData = new LabeldbData(odataServiceUrl);
                     JobOrders.JobOrdersValue[] jobValues = data as JobOrders.JobOrdersValue[];
-                    CountJobsToProcess = jobValues.Length;
+                    //CountJobsToProcess = jobValues.Length;
 
                     foreach (JobOrders.JobOrdersValue jobValue in jobValues)
                     {
+                        CountJobsToProcess++;
+
                         try
                         {
                             PrintJobProps job = lDbData.getJobData(EventLog, jobValue);
@@ -426,6 +428,10 @@ namespace PrintWindowsService
                             {
                                 Requests.updateJobStatus(odataServiceUrl, job.JobOrderID, lPrintState);
                             }
+                            else if (lPrintState == "Failed")
+                            {
+                                break;
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -434,6 +440,8 @@ namespace PrintWindowsService
                             SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
                             if (wmiProductInfo != null)
                                 wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
+
+                            break;
                         }
                     }
                 }
