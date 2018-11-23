@@ -104,8 +104,8 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.ServiceProcess" />
-    <Reference Include="xlsConverter, Version=1.0.0.5, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\xlsConverter.1.0.0.5\lib\net45\xlsConverter.dll</HintPath>
+    <Reference Include="xlsConverter, Version=1.0.0.7, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\xlsConverter.1.0.0.7\lib\net45\xlsConverter.dll</HintPath>
     </Reference>
     <Reference Include="ZSDK_API">
       <HintPath>lib\ZSDK_API.dll</HintPath>
@@ -130,6 +130,7 @@
     <Compile Include="..\PrintLabelService\PrintService.Designer.cs">
       <DependentUpon>PrintService.cs</DependentUpon>
     </Compile>
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>

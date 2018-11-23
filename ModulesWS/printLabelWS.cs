@@ -80,7 +80,7 @@ namespace PrintWindowsService
 			//process.Close();
 			//return exitcode == 0;
 			xlsConverter.Program.Convert(ExcelTemplateFile, PDFTemplateFile);
-			return File.Exists(BMPTemplateFile);
+			return File.Exists(PDFTemplateFile);
 		}
 
 		/// <summary>	Converts this object to a BMP. </summary>
@@ -367,13 +367,32 @@ namespace PrintWindowsService
 					mail.Subject = "Label";
 					mail.Body = "Label";
 					mail.Attachments.Add(new Attachment(PDFTemplateFile));
-					SmtpClient client = new SmtpClient();
-					client.Host = SMTPHost;
-					client.Port = SMTPPort;
-					//client.EnableSsl = true;
-					client.Credentials = CredentialCache.DefaultNetworkCredentials;
-					client.DeliveryMethod = SmtpDeliveryMethod.Network;
-					client.Send(mail);
+
+                    try
+                    {
+                        using (SmtpClient client = new SmtpClient())
+                        {
+                            client.Host = SMTPHost;
+                            client.Port = SMTPPort;
+                            //client.EnableSsl = true;
+                            client.Credentials = CredentialCache.DefaultNetworkCredentials;
+#if (DEBUG)
+                            client.Credentials = new NetworkCredential("ochekmez", "Arcelor1", "ask-ad");
+#endif
+                            client.DeliveryMethod = SmtpDeliveryMethod.Network;
+                            client.Send(mail);
+
+                            client.ServicePoint.CloseConnectionGroup(client.ServicePoint.ConnectionName);
+                        }
+                    }
+                    finally
+                    {
+                        foreach (Attachment attachment in mail.Attachments)
+                        {
+                            attachment.Dispose();
+                        }
+                        mail.Attachments.Dispose();
+                    }
 				}
 			}
 			catch (Exception ex)

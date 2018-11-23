@@ -17,7 +17,7 @@ namespace PrintWindowsService
     /// <summary>
     /// Class for the management of processing of input queue on printing of labels
     /// </summary>
-    public class PrintJobs
+    public sealed class PrintJobs : IDisposable
     {
         #region Const
 
@@ -154,7 +154,9 @@ namespace PrintWindowsService
                                                          DateTime.Now,
                                                          odataServiceUrl);
             }
+#pragma warning disable CS0168 // The variable 'ex' is declared but never used
             catch (Exception ex)
+#pragma warning restore CS0168 // The variable 'ex' is declared but never used
             {
                 //SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Failed to initialize WMI = {0}", ex.ToString()), EventLogEntryType.Error);
             }
@@ -180,7 +182,29 @@ namespace PrintWindowsService
                 eventLog.Close();
                 eventLog.Dispose();
             }
+
+            if (printTimer != null)
+            {
+                printTimer.Close();
+                printTimer.Dispose();
+            }
         }
+
+        public void Dispose()
+        {
+            if (eventLog != null)
+            {
+                eventLog.Close();
+                eventLog.Dispose();
+            }
+
+            if (printTimer != null)
+            {
+                printTimer.Close();
+                printTimer.Dispose();
+            }
+        }
+
         #endregion
 
         #region Methods
@@ -357,9 +381,9 @@ namespace PrintWindowsService
                                 //PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";
                                 PrintLabelWS printLabelWS = new PrintLabelWS()
                                 {
-                                    BMPTemplateFile = Path.GetTempPath() + randomFileName + ".xlsx",
-                                    ExcelTemplateFile = Path.GetTempPath() + randomFileName + ".pdf",
-                                    PDFTemplateFile = Path.GetTempPath() + randomFileName + ".bmp"
+                                    BMPTemplateFile = Path.GetTempPath() + randomFileName + ".bmp",
+                                    ExcelTemplateFile = Path.GetTempPath() + randomFileName + ".xlsx",
+                                    PDFTemplateFile = Path.GetTempPath() + randomFileName + ".pdf"
                                 };                                 
 
                                 if (job.Command == "Print")
@@ -569,7 +593,7 @@ namespace PrintWindowsService
                 using (FileStream fs = new FileStream(excelTemplateFile, FileMode.Create))
                 {
                     fs.Write(xlFile, 0, xlFile.Length);
-                    fs.Close();
+                    //fs.Close();
                 }
             }
         }
