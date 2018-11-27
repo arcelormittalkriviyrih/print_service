@@ -104,9 +104,6 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.ServiceProcess" />
-    <Reference Include="xlsConverter, Version=1.0.0.7, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\xlsConverter.1.0.0.7\lib\net45\xlsConverter.dll</HintPath>
-    </Reference>
     <Reference Include="ZSDK_API">
       <HintPath>lib\ZSDK_API.dll</HintPath>
     </Reference>
@@ -168,6 +165,10 @@
     <ProjectReference Include="..\ServicesLib\AMServicesLibrary.csproj">
       <Project>{0bc81c48-d64e-40c8-9bee-4baecf6fe0c1}</Project>
       <Name>AMServicesLibrary</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\xlsConverter\xlsConverter\xlsConverter.csproj">
+      <Project>{1c024f10-72a1-400c-ae27-f9d0bb360c35}</Project>
+      <Name>xlsConverter</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

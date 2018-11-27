@@ -8,6 +8,7 @@ using CommonEventSender;
 using ZSDK_API.Comm;
 using ZSDK_API.Printer;
 using JobOrdersService;
+using System.Reflection;
 
 namespace PrintWindowsService
 {
@@ -79,7 +80,7 @@ namespace PrintWindowsService
 			//int exitcode = process.ExitCode;
 			//process.Close();
 			//return exitcode == 0;
-			xlsConverter.Program.Convert(ExcelTemplateFile, PDFTemplateFile);
+			xlsConverter.Program.ConvertNoRotate(ExcelTemplateFile, PDFTemplateFile);
 			return File.Exists(PDFTemplateFile);
 		}
 
@@ -111,7 +112,32 @@ namespace PrintWindowsService
             {
                 throw new Exception("Printer DPI is missing in config.");
             }
-            xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile, dpi, dpi, true);
+
+            AppDomain newDomain = null;
+            try
+            {
+                newDomain = AppDomain.CreateDomain(Guid.NewGuid().ToString());
+                xlsConverter.Program obj = (xlsConverter.Program)newDomain.CreateInstanceAndUnwrap(typeof(xlsConverter.Program).Assembly.FullName, "xlsConverter.Program");
+                MethodInfo xlsConverMethodInfo = obj.GetType().GetMethod("Convert", BindingFlags.Public | BindingFlags.Static);
+                xlsConverMethodInfo.Invoke(null, new object[] { ExcelTemplateFile, BMPTemplateFile, dpi, dpi, true });
+            }
+            finally
+            {
+                if (newDomain != null)
+                {
+                    try
+                    {
+                        AppDomain.Unload(newDomain);
+                    }
+                    catch (CannotUnloadAppDomainException)
+                    {
+                        GC.Collect();
+                        AppDomain.Unload(newDomain);
+                    }
+                }
+            }
+
+            //xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile, dpi, dpi, true);
 			return File.Exists(BMPTemplateFile);
 		}
 
