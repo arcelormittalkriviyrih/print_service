@@ -87,16 +87,16 @@
   <PropertyGroup />
   <ItemGroup>
     <Reference Include="Spire.Common, Version=1.2.788.14040, Culture=neutral, PublicKeyToken=663f351905198cb3, processorArchitecture=MSIL">
-      <HintPath>..\packages\FreeSpire.XLS.8.3.0\lib\net40\Spire.Common.dll</HintPath>
+      <HintPath>..\..\packages\FreeSpire.XLS.8.3.0\lib\net40\Spire.Common.dll</HintPath>
     </Reference>
     <Reference Include="Spire.License, Version=1.3.6.40, Culture=neutral, PublicKeyToken=b1144360237c8b3f, processorArchitecture=MSIL">
-      <HintPath>..\packages\FreeSpire.XLS.8.3.0\lib\net40\Spire.License.dll</HintPath>
+      <HintPath>..\..\packages\FreeSpire.XLS.8.3.0\lib\net40\Spire.License.dll</HintPath>
     </Reference>
     <Reference Include="Spire.Pdf, Version=4.3.6.14040, Culture=neutral, PublicKeyToken=663f351905198cb3, processorArchitecture=MSIL">
-      <HintPath>..\packages\FreeSpire.XLS.8.3.0\lib\net40\Spire.Pdf.dll</HintPath>
+      <HintPath>..\..\packages\FreeSpire.XLS.8.3.0\lib\net40\Spire.Pdf.dll</HintPath>
     </Reference>
     <Reference Include="Spire.XLS, Version=8.3.0.61040, Culture=neutral, PublicKeyToken=663f351905198cb3, processorArchitecture=MSIL">
-      <HintPath>..\packages\FreeSpire.XLS.8.3.0\lib\net40\Spire.XLS.dll</HintPath>
+      <HintPath>..\..\packages\FreeSpire.XLS.8.3.0\lib\net40\Spire.XLS.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -114,7 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="packages.config" />
+    <None Include="packages.config" />      
     <None Include="xlsConverter_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
