@@ -138,12 +138,12 @@ namespace PrintWindowsService
             int printTaskFrequencyInSeconds = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cPrintTaskFrequencyName]);
             //dbConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings[cConnectionStringName].ConnectionString;
             odataServiceUrl = System.Configuration.ConfigurationManager.AppSettings[cOdataService];
-            SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("ODataServiceUrl = {0}", odataServiceUrl), EventLogEntryType.Information);
+            SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("ODataServiceUrl = {0}", odataServiceUrl), EventLogEntryType.Information, 1);
 
             //PrintLabelWS.ghostScriptPath = System.Configuration.ConfigurationManager.AppSettings[cGhostScriptPath];
             PrintLabelWS.SMTPHost = System.Configuration.ConfigurationManager.AppSettings[cSMTPHost];
             PrintLabelWS.SMTPPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings[cSMTPPort]);
-            SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("SMTP config = {0}:{1}", PrintLabelWS.SMTPHost, PrintLabelWS.SMTPPort), EventLogEntryType.Information);
+            SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("SMTP config = {0}:{1}", PrintLabelWS.SMTPHost, PrintLabelWS.SMTPPort), EventLogEntryType.Information, 1);
 
 
             try
@@ -165,7 +165,7 @@ namespace PrintWindowsService
             printTimer.Interval = printTaskFrequencyInSeconds * 1000; // seconds to milliseconds
             printTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.OnPrintTimer);
 
-            SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print Task Frequncy = {0}", printTaskFrequencyInSeconds), EventLogEntryType.Information);
+            SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print Task Frequncy = {0}", printTaskFrequencyInSeconds), EventLogEntryType.Information, 1);
         }
 
         #endregion
@@ -229,11 +229,11 @@ namespace PrintWindowsService
                 }
             }*/
 
-            SenderMonitorEvent.sendMonitorEvent(EventLog, "Starting print service...", EventLogEntryType.Information);
+            SenderMonitorEvent.sendMonitorEvent(EventLog, "Starting print service...", EventLogEntryType.Information, 1);
 
             printTimer.Start();
 
-            SenderMonitorEvent.sendMonitorEvent(EventLog, "Print service has been started", EventLogEntryType.Information);
+            SenderMonitorEvent.sendMonitorEvent(EventLog, "Print service has been started", EventLogEntryType.Information, 1);
             jobStarted = true;
         }
 
@@ -242,13 +242,13 @@ namespace PrintWindowsService
         /// </summary>
         public void StopJob()
         {
-            SenderMonitorEvent.sendMonitorEvent(EventLog, "Stopping print service...", EventLogEntryType.Information);
+            SenderMonitorEvent.sendMonitorEvent(EventLog, "Stopping print service...", EventLogEntryType.Information, 2);
 
             //stop timers if working
             if (printTimer.Enabled)
                 printTimer.Stop();
 
-            SenderMonitorEvent.sendMonitorEvent(EventLog, "Print service has been stopped", EventLogEntryType.Information);
+            SenderMonitorEvent.sendMonitorEvent(EventLog, "Print service has been stopped", EventLogEntryType.Information, 2);
             jobStarted = false;
         }
 
@@ -259,7 +259,7 @@ namespace PrintWindowsService
         {
             string lLastError = string.Empty;
             printTimer.Stop();
-            SenderMonitorEvent.sendMonitorEvent(EventLog, "Monitoring the print activity", EventLogEntryType.Information);
+            SenderMonitorEvent.sendMonitorEvent(EventLog, "Monitoring the print activity", EventLogEntryType.Information, 3);
 
             try
             {
@@ -269,7 +269,7 @@ namespace PrintWindowsService
                 LabeldbData lDbData = new LabeldbData(odataServiceUrl);
                 JobOrders jobsToProcess = lDbData.getJobsToProcess();
                 int CountJobsToProcess = jobsToProcess.JobOrdersObj.Count;
-                SenderMonitorEvent.sendMonitorEvent(EventLog, "Jobs to process: " + CountJobsToProcess, EventLogEntryType.Information);
+                SenderMonitorEvent.sendMonitorEvent(EventLog, "Jobs to process: " + CountJobsToProcess, EventLogEntryType.Information, 3);
 
                 if (CountJobsToProcess > 0)
                 {
@@ -291,7 +291,7 @@ namespace PrintWindowsService
                                 if (printThreadConcurrentDictionary.TryAdd(jobVal.Key, printThread))
                                     printThread.Start(printerJobArray);
                                 else
-                                    SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print Thread already exists, will be printed later, PrinterIP={0}.", jobVal.Key), EventLogEntryType.Information);
+                                    SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print Thread already exists, will be printed later, PrinterIP={0}.", jobVal.Key), EventLogEntryType.Information, 4);
                                 //throw new Exception(string.Format("Print Thread can't be created for printer IP {0}.", jobVal.Key));
                             }
                         }
@@ -299,7 +299,7 @@ namespace PrintWindowsService
                         {
                             string details = GetWebExceptionDetails(ex);
                             lLastError = "Error: " + ex.ToString() + " Details: " + details;
-                            SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
+                            SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error, 4);
                             if (wmiProductInfo != null)
                                 wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                         }
@@ -312,13 +312,13 @@ namespace PrintWindowsService
                 {
                     string details = GetWebExceptionDetails(ex);
                     lLastError = "Error getting jobs: " + ex.ToString() + " Details: " + details;
-                    SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
+                    SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error, 4);
                     if (wmiProductInfo != null)
                         wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                 }
                 catch (Exception exc)
                 {
-                    SenderMonitorEvent.sendMonitorEvent(EventLog, exc.Message, EventLogEntryType.Error);
+                    SenderMonitorEvent.sendMonitorEvent(EventLog, exc.Message, EventLogEntryType.Error, 4);
                 }
             }
             finally
@@ -375,7 +375,10 @@ namespace PrintWindowsService
 
                             if (job.isExistsTemplate)
                             {
-                                string randomFileName = Path.GetRandomFileName().Replace(".", "");
+                                if (string.IsNullOrEmpty(job.IpAddress))
+                                    throw new Exception(string.Format("Printer IP address missing for printer {0}.", job.PrinterNo));
+
+                                string randomFileName = job.IpAddress;//Path.GetRandomFileName().Replace(".", "");
                                 //PrintLabelWS.ExcelTemplateFile = Path.GetTempPath() + "Label.xlsx";
                                 //PrintLabelWS.PDFTemplateFile = Path.GetTempPath() + "Label.pdf";
                                 //PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";
@@ -424,7 +427,7 @@ namespace PrintWindowsService
                                     }
                                     lLastError = string.Format("JobOrderID: {0}. FactoryNumber: {3}. Mail to: {1}. Status: {2}", job.JobOrderID, job.CommandRule, lPrintState, lFactoryNumber);
                                 }
-                                SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, lPrintState == "Failed" ? EventLogEntryType.Error : EventLogEntryType.Information);
+                                SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, lPrintState == "Failed" ? EventLogEntryType.Error : EventLogEntryType.Information, 4);
                                 if (lPrintState == "Failed")
                                 {
                                     if (wmiProductInfo != null)
@@ -443,7 +446,7 @@ namespace PrintWindowsService
                             {
                                 lPrintState = "Failed";
                                 lLastError = string.Format("Excel template is empty. JobOrderID: {0}. FactoryNumber: {1}.", job.JobOrderID, lFactoryNumber);
-                                SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
+                                SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error, 4);
                                 if (wmiProductInfo != null)
                                     wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
                             }
@@ -461,7 +464,7 @@ namespace PrintWindowsService
                         {
                             string details = GetWebExceptionDetails(ex);
                             lLastError = "JobOrderID: " + lLastJobID + ". FactoryNumber: " + lFactoryNumber + " Error: " + ex.ToString() + " Details: " + details;
-                            SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error);
+                            SenderMonitorEvent.sendMonitorEvent(EventLog, lLastError, EventLogEntryType.Error, 4);
                             if (wmiProductInfo != null)
                                 wmiProductInfo.LastServiceError = string.Format("{0}. On {1}", lLastError, DateTime.Now);
 
@@ -478,11 +481,11 @@ namespace PrintWindowsService
                             wmiProductInfo.PrintedLabelsCount += CountJobsToProcess;
                             wmiProductInfo.PublishInfo();
                         }
-                        SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print is done. {0} tasks", CountJobsToProcess), EventLogEntryType.Information);
+                        SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print is done. {0} tasks", CountJobsToProcess), EventLogEntryType.Information, 4);
                     }
                     catch (Exception exc)
                     {
-                        SenderMonitorEvent.sendMonitorEvent(EventLog, exc.Message, EventLogEntryType.Error);
+                        SenderMonitorEvent.sendMonitorEvent(EventLog, exc.Message, EventLogEntryType.Error,4);
                     }
                 }
             }
@@ -498,7 +501,7 @@ namespace PrintWindowsService
             {
                 Thread lvRemovedThread;
                 if (printThreadConcurrentDictionary.TryRemove(lvThreadToRemove, out lvRemovedThread) == false)
-                    SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Thread Printer IP:{0} Can't be removed.", lvThreadToRemove), EventLogEntryType.Warning);
+                    SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Thread Printer IP:{0} Can't be removed.", lvThreadToRemove), EventLogEntryType.Warning, 4);
             }
         }
 

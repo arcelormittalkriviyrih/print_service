@@ -8,87 +8,86 @@ using CommonEventSender;
 using ZSDK_API.Comm;
 using ZSDK_API.Printer;
 using JobOrdersService;
-using System.Reflection;
 
 namespace PrintWindowsService
 {
-	/// <summary>
-	/// Class for initialising of parameters label and printing of the set label
-	/// </summary>
-	public class PrintLabelWS
-	{
-		//public static int pingTimeoutInSeconds;
-		public static EventLog eventLog;
-		public string ExcelTemplateFile;
-		public string PDFTemplateFile;
-		public string BMPTemplateFile;		
-		//public static string ghostScriptPath;
-		public static string SMTPHost;
-		public static int SMTPPort;
+    /// <summary>
+    /// Class for initialising of parameters label and printing of the set label
+    /// </summary>
+    public class PrintLabelWS
+    {
+        //public static int pingTimeoutInSeconds;
+        public static EventLog eventLog;
+        public string ExcelTemplateFile;
+        public string PDFTemplateFile;
+        public string BMPTemplateFile;
+        //public static string ghostScriptPath;
+        public static string SMTPHost;
+        public static int SMTPPort;
 
-		/// <summary>
-		/// Printing of the prepared label
-		/// </summary>
-		public bool PrintTemplate(PrintJobProps jobProps)
-		{
+        /// <summary>
+        /// Printing of the prepared label
+        /// </summary>
+        public bool PrintTemplate(PrintJobProps jobProps)
+        {
             //перед печатью если задан IP сделать пинг
-   //         if ((pingTimeoutInSeconds > 0) && (jobProps.IpAddress != ""))
-			//{
-			//	System.Net.NetworkInformation.Ping printerPing = new System.Net.NetworkInformation.Ping();
-			//	System.Net.NetworkInformation.PingReply printerReply = printerPing.Send(jobProps.IpAddress, pingTimeoutInSeconds);
-			//	if (printerReply.Status != System.Net.NetworkInformation.IPStatus.Success)
-			//	{
-			//		SenderMonitorEvent.sendMonitorEvent(eventLog, string.Format("JobOrderID: {0} Printer {1}  {2}  ping timeout status {3}", jobProps.JobOrderID, jobProps.PrinterNo, jobProps.IpAddress, printerReply.Status), EventLogEntryType.Warning);
-			//		return false;
-			//	}
-			//}
-            
+            //         if ((pingTimeoutInSeconds > 0) && (jobProps.IpAddress != ""))
+            //{
+            //	System.Net.NetworkInformation.Ping printerPing = new System.Net.NetworkInformation.Ping();
+            //	System.Net.NetworkInformation.PingReply printerReply = printerPing.Send(jobProps.IpAddress, pingTimeoutInSeconds);
+            //	if (printerReply.Status != System.Net.NetworkInformation.IPStatus.Success)
+            //	{
+            //		SenderMonitorEvent.sendMonitorEvent(eventLog, string.Format("JobOrderID: {0} Printer {1}  {2}  ping timeout status {3}", jobProps.JobOrderID, jobProps.PrinterNo, jobProps.IpAddress, printerReply.Status), EventLogEntryType.Warning);
+            //		return false;
+            //	}
+            //}
+
             Boolean boolPrintLabel = false;
-			if (PrepareTemplate(jobProps, false))
-			{
+            if (PrepareTemplate(jobProps, false))
+            {
                 boolPrintLabel = PrintZebra(jobProps.IpAddress, jobProps.PaperWidth, jobProps.PaperHeight, jobProps.JobOrderID, jobProps.PrinterNo);//PrintBMP(jobProps.PrinterName);            
             }
-			else
-			{
-				//SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not convert label template to pdf. Process failed", EventLogEntryType.Error);
-				return false;
-			}
+            else
+            {
+                //SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not convert label template to pdf. Process failed", EventLogEntryType.Error);
+                return false;
+            }
 
-			return boolPrintLabel;
-		}
+            return boolPrintLabel;
+        }
 
-		/// <summary>	Converts this object to a PDF. </summary>
-		///
-		/// <returns>	true if it succeeds, false if it fails. </returns>
-		private bool ConvertToPDF()
-		{
-			//File.Delete(PDFTemplateFile);
-			//ProcessStartInfo startInfo = new ProcessStartInfo();
-			//startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + PDFTemplateFile + "\"";
-			//startInfo.FileName = xlsConverterPath;
-			//startInfo.UseShellExecute = false;
+        /// <summary>	Converts this object to a PDF. </summary>
+        ///
+        /// <returns>	true if it succeeds, false if it fails. </returns>
+        private bool ConvertToPDF()
+        {
+            //File.Delete(PDFTemplateFile);
+            //ProcessStartInfo startInfo = new ProcessStartInfo();
+            //startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + PDFTemplateFile + "\"";
+            //startInfo.FileName = xlsConverterPath;
+            //startInfo.UseShellExecute = false;
 
-			//startInfo.RedirectStandardError = true;
-			//startInfo.RedirectStandardOutput = true;
-			//startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            //startInfo.RedirectStandardError = true;
+            //startInfo.RedirectStandardOutput = true;
+            //startInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
-			//Process process = null;
-			//process = Process.Start(startInfo);
-			//process.WaitForExit(30000);
-			//if (process.HasExited == false)
-			//    process.Kill();
-			//int exitcode = process.ExitCode;
-			//process.Close();
-			//return exitcode == 0;
-			xlsConverter.Program.ConvertNoRotate(ExcelTemplateFile, PDFTemplateFile);
-			return File.Exists(PDFTemplateFile);
-		}
+            //Process process = null;
+            //process = Process.Start(startInfo);
+            //process.WaitForExit(30000);
+            //if (process.HasExited == false)
+            //    process.Kill();
+            //int exitcode = process.ExitCode;
+            //process.Close();
+            //return exitcode == 0;
+            xlsConverter.Program.ConvertNoRotate(ExcelTemplateFile, PDFTemplateFile);
+            return File.Exists(PDFTemplateFile);
+        }
 
-		/// <summary>	Converts this object to a BMP. </summary>
-		///
-		/// <returns>	true if it succeeds, false if it fails. </returns>
-		private bool ConvertToBMP()
-		{
+        /// <summary>	Converts this object to a BMP. </summary>
+        ///
+        /// <returns>	true if it succeeds, false if it fails. </returns>
+        private bool ConvertToBMP()
+        {
             //File.Delete(PDFTemplateFile);
             //ProcessStartInfo startInfo = new ProcessStartInfo();
             //startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + BMPTemplateFile + "\"";
@@ -112,36 +111,11 @@ namespace PrintWindowsService
             {
                 throw new Exception("Printer DPI is missing in config.");
             }
+            xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile, dpi, dpi, true);
+            return File.Exists(BMPTemplateFile);
+        }
 
-            AppDomain newDomain = null;
-            try
-            {
-                newDomain = AppDomain.CreateDomain(Guid.NewGuid().ToString());
-                xlsConverter.Program obj = (xlsConverter.Program)newDomain.CreateInstanceAndUnwrap(typeof(xlsConverter.Program).Assembly.FullName, "xlsConverter.Program");
-                MethodInfo xlsConverMethodInfo = obj.GetType().GetMethod("Convert", BindingFlags.Public | BindingFlags.Static);
-                xlsConverMethodInfo.Invoke(null, new object[] { ExcelTemplateFile, BMPTemplateFile, dpi, dpi, true });
-            }
-            finally
-            {
-                if (newDomain != null)
-                {
-                    try
-                    {
-                        AppDomain.Unload(newDomain);
-                    }
-                    catch (CannotUnloadAppDomainException)
-                    {
-                        GC.Collect();
-                        AppDomain.Unload(newDomain);
-                    }
-                }
-            }
-
-            //xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile, dpi, dpi, true);
-			return File.Exists(BMPTemplateFile);
-		}
-
-		/*
+        /*
         /// <summary>	Print PDF. </summary>
 		///
 		/// <param name="printerName">	Name of the printer. </param>
@@ -167,7 +141,7 @@ namespace PrintWindowsService
 			process.Close();
 			return exitcode == 0;
 		}*/
-        
+
 
         public string getPrinterStatus(string printerIpAddress, string printerNo)
         {
@@ -186,28 +160,28 @@ namespace PrintWindowsService
 
                 PrinterStatus printerStatus = printer.GetCurrentStatus();
                 if (printerStatus.IsReadyToPrint)
-                {                    
+                {
                     return "OK";
                 }
                 else if (printerStatus.IsPaused)
                 {
-                    return "Paused";                    
+                    return "Paused";
                 }
                 else if (printerStatus.IsHeadOpen)
                 {
-                    return  "Head is open";                    
+                    return "Head is open";
                 }
                 else if (printerStatus.IsPaperOut)
                 {
-                    return  "Out of paper";                    
+                    return "Out of paper";
                 }
                 else if (printerStatus.IsRibbonOut)
                 {
-                    return  "Ribbon is out";                    
+                    return "Ribbon is out";
                 }
                 else
                 {
-                    return  "Invalid status: "+ printerStatus.ToString();                    
+                    return "Invalid status: " + printerStatus.ToString();
                 }
             }
             catch (Exception ex)
@@ -227,172 +201,172 @@ namespace PrintWindowsService
         ///
         /// <returns>	true if it succeeds, false if it fails. </returns>
         private bool PrintZebra(string printerIpAddress, string width, string height, int JobOrderId, string printerNo)
-		{
+        {
             bool result = true;
-			ZebraPrinterConnection connection = null;
-			try
-			{
-				if (string.IsNullOrEmpty(printerIpAddress))
-					throw new Exception(string.Format("Printer IP address missing for printer {0}.", printerNo));
-				if (string.IsNullOrEmpty(width))
-					throw new Exception(string.Format("Paper width is null for printer {0}.", printerNo));
-				if (string.IsNullOrEmpty(height))
-					throw new Exception(string.Format("Paper height is null for {0}.", printerNo));
+            ZebraPrinterConnection connection = null;
+            try
+            {
+                if (string.IsNullOrEmpty(printerIpAddress))
+                    throw new Exception(string.Format("Printer IP address missing for printer {0}.", printerNo));
+                if (string.IsNullOrEmpty(width))
+                    throw new Exception(string.Format("Paper width is null for printer {0}.", printerNo));
+                if (string.IsNullOrEmpty(height))
+                    throw new Exception(string.Format("Paper height is null for {0}.", printerNo));
 
-				int port = 9100;
-				if (!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["ZebraPrinterPort"], out port))
-				{
-					throw new Exception("Printer port is missing in config.");
-				}
-                
+                int port = 9100;
+                if (!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["ZebraPrinterPort"], out port))
+                {
+                    throw new Exception("Printer port is missing in config.");
+                }
+
                 int paperWidth = 0;
-				if (!int.TryParse(width, out paperWidth))
-				{
-					throw new Exception(string.Format("Paper width is not integer for {0}.", printerNo));
-				}
+                if (!int.TryParse(width, out paperWidth))
+                {
+                    throw new Exception(string.Format("Paper width is not integer for {0}.", printerNo));
+                }
 
-				int paperHeight = 0;
-				if (!int.TryParse(height, out paperHeight))
-				{
-					throw new Exception(string.Format("Paper height is not integer for {0}.", printerNo));
-				}
+                int paperHeight = 0;
+                if (!int.TryParse(height, out paperHeight))
+                {
+                    throw new Exception(string.Format("Paper height is not integer for {0}.", printerNo));
+                }
 
-				connection = new TcpPrinterConnection(printerIpAddress, port);
-				connection.Open();
-				ZebraPrinter printer = ZebraPrinterFactory.GetInstance(connection);
+                connection = new TcpPrinterConnection(printerIpAddress, port);
+                connection.Open();
+                ZebraPrinter printer = ZebraPrinterFactory.GetInstance(connection);
 
-				PrinterStatus printerStatus = printer.GetCurrentStatus();
-				if (printerStatus.IsReadyToPrint)
-				{
+                PrinterStatus printerStatus = printer.GetCurrentStatus();
+                if (printerStatus.IsReadyToPrint)
+                {
                     //printer.GetGraphicsUtil().PrintImage(BMPTemplateFile, 0, 0);
                     printer.GetGraphicsUtil().PrintImage(BMPTemplateFile, 0, 0, paperWidth, paperHeight, false);
-				}
-				else if (printerStatus.IsPaused)
-				{
-					throw new Exception(string.Format("Cannot Print because the printer {0} is paused.", printerNo));
-				}
-				else if (printerStatus.IsHeadOpen)
-				{
-					throw new Exception(string.Format("Cannot Print because the printer {0} head is open.", printerNo));
-				}
-				else if (printerStatus.IsPaperOut)
-				{
-					throw new Exception(string.Format("Cannot Print because the paper is out for printer {0}.", printerNo));
-				}
-				else if (printerStatus.IsRibbonOut)
-				{
-					throw new Exception(string.Format("Cannot Print because the ribbon is out for printer {0}.", printerNo));
-				}
-				else
-				{
-					throw new Exception(string.Format("Cannot print to {0}. Not valid printer status: {1}", printerNo, printerStatus.ToString()));
-				}
-			}
-			catch (Exception ex)
-			{
-				SenderMonitorEvent.sendMonitorEvent(eventLog, "JobOrderId: "+ JobOrderId +". Print Zebra error: " + ex.ToString(), EventLogEntryType.Error);
-				result = false;
-			}
-			finally
-			{
-				if (connection != null && connection.IsConnected())
-					connection.Close();
-			}
+                }
+                else if (printerStatus.IsPaused)
+                {
+                    throw new Exception(string.Format("Cannot Print because the printer {0} is paused.", printerNo));
+                }
+                else if (printerStatus.IsHeadOpen)
+                {
+                    throw new Exception(string.Format("Cannot Print because the printer {0} head is open.", printerNo));
+                }
+                else if (printerStatus.IsPaperOut)
+                {
+                    throw new Exception(string.Format("Cannot Print because the paper is out for printer {0}.", printerNo));
+                }
+                else if (printerStatus.IsRibbonOut)
+                {
+                    throw new Exception(string.Format("Cannot Print because the ribbon is out for printer {0}.", printerNo));
+                }
+                else
+                {
+                    throw new Exception(string.Format("Cannot print to {0}. Not valid printer status: {1}", printerNo, printerStatus.ToString()));
+                }
+            }
+            catch (Exception ex)
+            {
+                SenderMonitorEvent.sendMonitorEvent(eventLog, "JobOrderId: " + JobOrderId + ". Print Zebra error: " + ex.ToString(), EventLogEntryType.Error, 4);
+                result = false;
+            }
+            finally
+            {
+                if (connection != null && connection.IsConnected())
+                    connection.Close();
+            }
 
-			return result;
-		}
+            return result;
+        }
 
-		/// <summary>	Print BMP. </summary>
-		///
-		/// <param name="printerName">	Name of the printer. </param>
-		///
-		/// <returns>	true if it succeeds, false if it fails. </returns>
-		private bool PrintBMP(string printerName)
-		{
-			try
-			{
-				ProcessStartInfo info = new ProcessStartInfo(BMPTemplateFile);
-				info.Arguments = "\"" + printerName + "\"";
-				info.CreateNoWindow = true;
-				info.WindowStyle = ProcessWindowStyle.Hidden;
-				info.UseShellExecute = true;
-				info.Verb = "PrintTo";
-				Process process = null;
-				process = Process.Start(info);
-
-				process.WaitForExit(30000);
-				if (process.HasExited == false)
-					process.Kill();
-				int exitcode = process.ExitCode;
-				process.Close();
-				return exitcode == 0;
-			}
-			catch (Exception ex)
-			{
-				SenderMonitorEvent.sendMonitorEvent(eventLog, "Print BMP error: " + ex.ToString(), EventLogEntryType.Error);
-				return false;
-			}
-		}
-
-		/// <summary>	Prepare document for print. </summary>
-		///
-		/// <param name="jobProps">	The job properties. </param>
-		///
-		/// <returns>	true if it succeeds, false if it fails. </returns>
-		private bool PrepareTemplate(PrintJobProps jobProps, bool isPDF)
-		{
-            Boolean boolConvertLabel = false;
-			LabelTemplate lTemplate = new LabelTemplate(ExcelTemplateFile);
-			try
-			{
-                lTemplate.FillParamValues(jobProps);
-			}
-			catch (Exception ex)
-			{
-				SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not prepare label template. Error: " + ex.ToString(), EventLogEntryType.Error);
-				return false;
-			}
+        /// <summary>	Print BMP. </summary>
+        ///
+        /// <param name="printerName">	Name of the printer. </param>
+        ///
+        /// <returns>	true if it succeeds, false if it fails. </returns>
+        private bool PrintBMP(string printerName)
+        {
             try
-			{
-				if (isPDF)
-					boolConvertLabel = ConvertToPDF();
-				else
-					boolConvertLabel = ConvertToBMP();
-			}
-			catch (Exception ex)
-			{
-				SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not convert Excel label template to PDF/BMP. Error: " + ex.ToString(), EventLogEntryType.Error);
-				return false;
-			}
-            return boolConvertLabel;
-		}
+            {
+                ProcessStartInfo info = new ProcessStartInfo(BMPTemplateFile);
+                info.Arguments = "\"" + printerName + "\"";
+                info.CreateNoWindow = true;
+                info.WindowStyle = ProcessWindowStyle.Hidden;
+                info.UseShellExecute = true;
+                info.Verb = "PrintTo";
+                Process process = null;
+                process = Process.Start(info);
 
-		/// <summary>	Email PDF. </summary>
-		///
-		/// <param name="emailAddresses">	The email addresses. </param>
-		///
-		/// <returns>	true if it succeeds, false if it fails. </returns>
-		private bool EmailPDF(string emailAddresses)
-		{
-			MailMessage mail;
-			try
-			{
-				using (mail = new MailMessage())
-				{
-					string mailFrom = "";
-					string[] mailtoList = emailAddresses.Split(',');
-					foreach (var mailTo in mailtoList)
-					{
-						if (mailTo != "")
-						{
-							mail.To.Add(new MailAddress(mailTo));
-							mailFrom = mailTo;
-						}
-					}
-					mail.From = new MailAddress(mailFrom);
-					mail.Subject = "Label";
-					mail.Body = "Label";
-					mail.Attachments.Add(new Attachment(PDFTemplateFile));
+                process.WaitForExit(30000);
+                if (process.HasExited == false)
+                    process.Kill();
+                int exitcode = process.ExitCode;
+                process.Close();
+                return exitcode == 0;
+            }
+            catch (Exception ex)
+            {
+                SenderMonitorEvent.sendMonitorEvent(eventLog, "Print BMP error: " + ex.ToString(), EventLogEntryType.Error, 4);
+                return false;
+            }
+        }
+
+        /// <summary>	Prepare document for print. </summary>
+        ///
+        /// <param name="jobProps">	The job properties. </param>
+        ///
+        /// <returns>	true if it succeeds, false if it fails. </returns>
+        private bool PrepareTemplate(PrintJobProps jobProps, bool isPDF)
+        {
+            Boolean boolConvertLabel = false;
+            LabelTemplate lTemplate = new LabelTemplate(ExcelTemplateFile);
+            try
+            {
+                lTemplate.FillParamValues(jobProps);
+            }
+            catch (Exception ex)
+            {
+                SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not prepare label template. Error: " + ex.ToString(), EventLogEntryType.Error, 4);
+                return false;
+            }
+            try
+            {
+                if (isPDF)
+                    boolConvertLabel = ConvertToPDF();
+                else
+                    boolConvertLabel = ConvertToBMP();
+            }
+            catch (Exception ex)
+            {
+                SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not convert Excel label template to PDF/BMP. Error: " + ex.ToString(), EventLogEntryType.Error, 4);
+                return false;
+            }
+            return boolConvertLabel;
+        }
+
+        /// <summary>	Email PDF. </summary>
+        ///
+        /// <param name="emailAddresses">	The email addresses. </param>
+        ///
+        /// <returns>	true if it succeeds, false if it fails. </returns>
+        private bool EmailPDF(string emailAddresses)
+        {
+            MailMessage mail;
+            try
+            {
+                using (mail = new MailMessage())
+                {
+                    string mailFrom = "";
+                    string[] mailtoList = emailAddresses.Split(',');
+                    foreach (var mailTo in mailtoList)
+                    {
+                        if (mailTo != "")
+                        {
+                            mail.To.Add(new MailAddress(mailTo));
+                            mailFrom = mailTo;
+                        }
+                    }
+                    mail.From = new MailAddress(mailFrom);
+                    mail.Subject = "Label";
+                    mail.Body = "Label";
+                    mail.Attachments.Add(new Attachment(PDFTemplateFile));
 
                     try
                     {
@@ -419,34 +393,34 @@ namespace PrintWindowsService
                         }
                         mail.Attachments.Dispose();
                     }
-				}
-			}
-			catch (Exception ex)
-			{
-				SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not send email with label template. Error: " + ex.ToString(), EventLogEntryType.Error);
-				return false;
-			}
+                }
+            }
+            catch (Exception ex)
+            {
+                SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not send email with label template. Error: " + ex.ToString(), EventLogEntryType.Error, 4);
+                return false;
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		/// <summary>
-		/// Email of the prepared label
-		/// </summary>
-		public bool EmailTemplate(PrintJobProps jobProps)
-		{
-			Boolean boolEmailLabel = false;
-			if (PrepareTemplate(jobProps, true))
-			{
-				boolEmailLabel = EmailPDF(jobProps.CommandRule);
-			}
-			else
-			{
-				SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not convert label template to pdf. Process failed", EventLogEntryType.Error);
-				return false;
-			}
+        /// <summary>
+        /// Email of the prepared label
+        /// </summary>
+        public bool EmailTemplate(PrintJobProps jobProps)
+        {
+            Boolean boolEmailLabel = false;
+            if (PrepareTemplate(jobProps, true))
+            {
+                boolEmailLabel = EmailPDF(jobProps.CommandRule);
+            }
+            else
+            {
+                SenderMonitorEvent.sendMonitorEvent(eventLog, "Can not convert label template to pdf. Process failed", EventLogEntryType.Error, 4);
+                return false;
+            }
 
-			return boolEmailLabel;
-		}
-	}
+            return boolEmailLabel;
+        }
+    }
 }

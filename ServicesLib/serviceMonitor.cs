@@ -38,14 +38,14 @@ namespace CommonEventSender
             get { return eventTime; }
         }
 
-        public SenderMonitorEvent(EventLog eventLog, string message, EventLogEntryType eventType)
+        public SenderMonitorEvent(EventLog eventLog, string message, EventLogEntryType eventType, int eventID)
         {
             this.message = message;
             this.eventType = eventType;
             eventTime = DateTime.Now;
             if (eventLog != null)
             {
-                eventLog.WriteEntry(message, eventType);
+                eventLog.WriteEntry(message, eventType, eventID);
             }
         }
 
@@ -54,7 +54,15 @@ namespace CommonEventSender
         /// </summary>
         public static void sendMonitorEvent(EventLog eventLog, string message, EventLogEntryType eventType)
         {
-            SenderMonitorEvent MonitorEvent = new SenderMonitorEvent(eventLog, message, eventType);
+            sendMonitorEvent(eventLog, message, eventType, 0);
+        }
+
+        /// <summary>
+        /// Create and fire event
+        /// </summary>
+        public static void sendMonitorEvent(EventLog eventLog, string message, EventLogEntryType eventType, int eventID)
+        {
+            SenderMonitorEvent MonitorEvent = new SenderMonitorEvent(eventLog, message, eventType, eventID);
             try
             {
                 Instrumentation.Fire(MonitorEvent);
