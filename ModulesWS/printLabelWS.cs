@@ -86,6 +86,7 @@ namespace PrintWindowsService
 
             // Open a template excel file
             Workbook book = new Workbook(ExcelTemplateFile);
+            book.CalculateFormula();
 
             // Make all sheets invisible except first worksheet
             for (int i = 1; i < book.Worksheets.Count; i++)
@@ -130,6 +131,7 @@ namespace PrintWindowsService
 
             // Open a template excel file
             Workbook book = new Workbook(ExcelTemplateFile);
+            book.CalculateFormula();
 
             // Get the first worksheet.
             Worksheet sheet = book.Worksheets[0];
