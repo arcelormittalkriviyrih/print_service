@@ -8,6 +8,10 @@ using CommonEventSender;
 using ZSDK_API.Comm;
 using ZSDK_API.Printer;
 using JobOrdersService;
+using Aspose.Cells;
+using Aspose.Cells.Rendering;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace PrintWindowsService
 {
@@ -79,7 +83,19 @@ namespace PrintWindowsService
             //int exitcode = process.ExitCode;
             //process.Close();
             //return exitcode == 0;
-            xlsConverter.Program.ConvertNoRotate(ExcelTemplateFile, PDFTemplateFile);
+
+            // Open a template excel file
+            Workbook book = new Workbook(ExcelTemplateFile);
+
+            // Make all sheets invisible except first worksheet
+            for (int i = 1; i < book.Worksheets.Count; i++)
+            {
+                book.Worksheets[i].IsVisible = false;
+            }
+
+            book.Save(PDFTemplateFile, SaveFormat.Pdf);
+
+            //xlsConverter.Program.ConvertNoRotate(ExcelTemplateFile, PDFTemplateFile);
             return File.Exists(PDFTemplateFile);
         }
 
@@ -111,8 +127,99 @@ namespace PrintWindowsService
             {
                 throw new Exception("Printer DPI is missing in config.");
             }
-            xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile, dpi, dpi, true);
+
+            // Open a template excel file
+            Workbook book = new Workbook(ExcelTemplateFile);
+
+            // Get the first worksheet.
+            Worksheet sheet = book.Worksheets[0];
+
+            // Define ImageOrPrintOptions
+            ImageOrPrintOptions imgOptions = new ImageOrPrintOptions();
+            // Specify the image format
+            imgOptions.ImageType = Aspose.Cells.Drawing.ImageType.Bmp;
+            imgOptions.OnlyArea = true;
+            //imgOptions.OnePagePerSheet = true;
+            //imgOptions.IsCellAutoFit = true;
+            imgOptions.HorizontalResolution = (int)dpi;
+            imgOptions.VerticalResolution = (int)dpi;
+            // Render the sheet with respect to specified image/print options
+            SheetRender sr = new SheetRender(sheet, imgOptions);
+            // Render the image for the sheet
+            Bitmap bitmap = sr.ToImage(0);
+
+            bool rotate = true;
+            using (Image croppedImage = AutoCrop(bitmap))
+            {
+                if (rotate)
+                {
+                    croppedImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
+                }
+                croppedImage.Save(BMPTemplateFile);
+            }
+
+            //xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile, dpi, dpi, true);
             return File.Exists(BMPTemplateFile);
+        }
+
+        private static Image AutoCrop(Bitmap bmp)
+        {
+            if (Image.GetPixelFormatSize(bmp.PixelFormat) != 32)
+                throw new InvalidOperationException("Autocrop currently only supports 32 bits per pixel images.");
+
+            // Initialize variables
+            var cropColor = System.Drawing.Color.White;
+
+            var bottom = 0;
+            var left = bmp.Width; // Set the left crop point to the width so that the logic below will set the left value to the first non crop color pixel it comes across.
+            var right = 0;
+            var top = bmp.Height; // Set the top crop point to the height so that the logic below will set the top value to the first non crop color pixel it comes across.
+
+            var bmpData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, bmp.PixelFormat);
+
+            unsafe
+            {
+                var dataPtr = (byte*)bmpData.Scan0;
+
+                for (var y = 0; y < bmp.Height; y++)
+                {
+                    for (var x = 0; x < bmp.Width; x++)
+                    {
+                        var rgbPtr = dataPtr + (x * 4);
+
+                        var b = rgbPtr[0];
+                        var g = rgbPtr[1];
+                        var r = rgbPtr[2];
+                        var a = rgbPtr[3];
+
+                        // If any of the pixel RGBA values don't match and the crop color is not transparent, or if the crop color is transparent and the pixel A value is not transparent
+                        if ((cropColor.A > 0 && (b != cropColor.B || g != cropColor.G || r != cropColor.R || a != cropColor.A)) || (cropColor.A == 0 && a != 0))
+                        {
+                            if (x < left)
+                                left = x;
+
+                            if (x >= right)
+                                right = x + 1;
+
+                            if (y < top)
+                                top = y;
+
+                            if (y >= bottom)
+                                bottom = y + 1;
+                        }
+                    }
+
+                    dataPtr += bmpData.Stride;
+                }
+            }
+
+            bmp.UnlockBits(bmpData);
+
+            if (left < right && top < bottom)
+                //return bmp.Clone(new Rectangle(left, top, right - left, bottom - top), bmp.PixelFormat);
+                return bmp.Clone(new Rectangle(/*left*/0, /*top*/0, right, bottom), bmp.PixelFormat);
+
+            return null; // Entire image should be cropped, so just return null
         }
 
         /*
@@ -328,6 +435,16 @@ namespace PrintWindowsService
             }
             try
             {
+                try
+                {
+                    Aspose.Cells.License lvLicense = new Aspose.Cells.License();
+                    lvLicense.SetLicense("Aspose.Cells.lic");
+                }
+                catch (Exception ex)
+                {
+                    SenderMonitorEvent.sendMonitorEvent(eventLog, "Aspose.Cells License Error: " + ex.ToString(), EventLogEntryType.Warning);
+                }
+
                 if (isPDF)
                     boolConvertLabel = ConvertToPDF();
                 else
