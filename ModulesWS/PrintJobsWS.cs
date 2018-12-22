@@ -73,7 +73,9 @@ namespace PrintWindowsService
         /// <summary>	The event log. </summary>
         private EventLog eventLog;
 
-        private ConcurrentDictionary<string, Thread> printThreadConcurrentDictionary = new ConcurrentDictionary<string, Thread>();
+        private Dictionary<string, Thread> printThreadConcurrentDictionary = new Dictionary<string, Thread>();
+
+        private SimpleLogger simpleLogger = null; //new SimpleLogger();
 
         #endregion
 
@@ -102,7 +104,7 @@ namespace PrintWindowsService
                         }
                         eventLog.Source = cSystemEventSourceName;
                         eventLog.Log = lSystemEventLogName;
-                        PrintLabelWS.eventLog = eventLog;
+                        //PrintLabelWS.eventLog = eventLog;
 
                         WindowsIdentity identity = WindowsIdentity.GetCurrent();
                         WindowsPrincipal principal = new WindowsPrincipal(identity);
@@ -163,7 +165,7 @@ namespace PrintWindowsService
 
             printTimer = new System.Timers.Timer();
             printTimer.Interval = printTaskFrequencyInSeconds * 1000; // seconds to milliseconds
-            printTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.OnPrintTimer);
+            printTimer.Elapsed += new System.Timers.ElapsedEventHandler(OnPrintTimer);
 
             SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print Task Frequncy = {0}", printTaskFrequencyInSeconds), EventLogEntryType.Information, 1);
         }
@@ -172,37 +174,19 @@ namespace PrintWindowsService
 
         #region Destructor
 
-        /// <summary>
-        /// Constructor that prevents a default instance of this class from being created.
-        /// </summary>
-        ~PrintJobs()
-        {
-            if (eventLog != null)
-            {
-                eventLog.Close();
-                eventLog.Dispose();
-            }
-
-            if (printTimer != null)
-            {
-                printTimer.Close();
-                printTimer.Dispose();
-            }
-        }
-
         public void Dispose()
         {
             if (eventLog != null)
             {
-                eventLog.Close();
                 eventLog.Dispose();
             }
 
             if (printTimer != null)
             {
-                printTimer.Close();
                 printTimer.Dispose();
             }
+
+            GC.SuppressFinalize(this);
         }
 
         #endregion
@@ -287,9 +271,13 @@ namespace PrintWindowsService
                             }
                             else
                             {
-                                Thread printThread = new Thread(DoPrintWork);
-                                if (printThreadConcurrentDictionary.TryAdd(jobVal.Key, printThread))
+                                if (!printThreadConcurrentDictionary.ContainsKey(jobVal.Key))
+                                {
+                                    Thread printThread = new Thread(DoPrintWork);
+                                    printThreadConcurrentDictionary.Add(jobVal.Key, printThread);
                                     printThread.Start(printerJobArray);
+                                    simpleLogger?.Info(string.Format("Thread with IP:{0} added to dictionary.", jobVal.Key));
+                                }
                                 else
                                     SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Print Thread already exists, will be printed later, PrinterIP={0}.", jobVal.Key), EventLogEntryType.Information, 4);
                                 //throw new Exception(string.Format("Print Thread can't be created for printer IP {0}.", jobVal.Key));
@@ -384,10 +372,11 @@ namespace PrintWindowsService
                                 //PrintLabelWS.BMPTemplateFile = Path.GetTempPath() + "Label.bmp";
                                 PrintLabelWS printLabelWS = new PrintLabelWS()
                                 {
+                                    eventLog = EventLog,
                                     BMPTemplateFile = Path.GetTempPath() + randomFileName + ".bmp",
                                     ExcelTemplateFile = Path.GetTempPath() + randomFileName + ".xlsx",
                                     PDFTemplateFile = Path.GetTempPath() + randomFileName + ".pdf"
-                                };                                 
+                                };
 
                                 if (job.Command == "Print")
                                 {
@@ -435,6 +424,8 @@ namespace PrintWindowsService
                                 }
 
                                 //Clear All PrintLabelWS Temp Files
+                                if (printLabelWS.eventLog != null)
+                                    printLabelWS.eventLog = null;
                                 if (File.Exists(printLabelWS.BMPTemplateFile))
                                     File.Delete(printLabelWS.BMPTemplateFile);
                                 if (File.Exists(printLabelWS.PDFTemplateFile))
@@ -496,12 +487,14 @@ namespace PrintWindowsService
         /// </summary>
         private void RemoveAllNotAliveThreads()
         {
-            var lvThreadsToRemove = printThreadConcurrentDictionary.Where(t => t.Value.IsAlive == false).Select(t => t.Key);
+            var lvThreadsToRemove = printThreadConcurrentDictionary.Where(t => t.Value.IsAlive == false).Select(t => t.Key).ToArray();
             foreach (var lvThreadToRemove in lvThreadsToRemove)
             {
-                Thread lvRemovedThread;
-                if (printThreadConcurrentDictionary.TryRemove(lvThreadToRemove, out lvRemovedThread) == false)
-                    SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Thread Printer IP:{0} Can't be removed.", lvThreadToRemove), EventLogEntryType.Warning, 4);
+                printThreadConcurrentDictionary.Remove(lvThreadToRemove);
+                simpleLogger?.Info(string.Format("Thread with IP:{0} removed from dictionary.", lvThreadToRemove));
+
+                //if (printThreadConcurrentDictionary.Remove(lvThreadToRemove))
+                //    SenderMonitorEvent.sendMonitorEvent(EventLog, string.Format("Thread Printer IP:{0} Can't be removed.", lvThreadToRemove), EventLogEntryType.Warning, 4);
             }
         }
 

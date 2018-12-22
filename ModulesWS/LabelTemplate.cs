@@ -12,7 +12,7 @@ namespace PrintWindowsService
     /// <summary>
     /// Class for work with Excel template and data of label
     /// </summary>
-    public class LabelTemplate
+    public class LabelTemplate : IDisposable
     {
         /// <summary>
         /// The name of the configuration parameter for the dot size.
@@ -296,5 +296,19 @@ namespace PrintWindowsService
             if (File.Exists(tempImageFileName))
                 File.Delete(tempImageFileName);
         }
+
+        #region Destructor
+
+        public void Dispose()
+        {
+            if (spreadSheet != null)
+            {
+                spreadSheet.Dispose();
+            }
+
+            GC.SuppressFinalize(this);
+        }
+
+        #endregion
     }
 }

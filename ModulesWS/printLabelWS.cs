@@ -1,27 +1,25 @@
-﻿using System;
-using System.Data;
+﻿using Aspose.Cells;
+using Aspose.Cells.Rendering;
+using CommonEventSender;
+using System;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Net;
 using System.Net.Mail;
-using CommonEventSender;
-using ZSDK_API.Comm;
-using ZSDK_API.Printer;
-using JobOrdersService;
-using Aspose.Cells;
-using Aspose.Cells.Rendering;
-using System.Drawing;
-using System.Drawing.Imaging;
+using Zebra.Sdk.Comm;
+using Zebra.Sdk.Printer;
 
 namespace PrintWindowsService
 {
     /// <summary>
     /// Class for initialising of parameters label and printing of the set label
     /// </summary>
-    public class PrintLabelWS
+    public class PrintLabelWS : IDisposable
     {
         //public static int pingTimeoutInSeconds;
-        public static EventLog eventLog;
+        public EventLog eventLog;
         public string ExcelTemplateFile;
         public string PDFTemplateFile;
         public string BMPTemplateFile;
@@ -65,36 +63,19 @@ namespace PrintWindowsService
         /// <returns>	true if it succeeds, false if it fails. </returns>
         private bool ConvertToPDF()
         {
-            //File.Delete(PDFTemplateFile);
-            //ProcessStartInfo startInfo = new ProcessStartInfo();
-            //startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + PDFTemplateFile + "\"";
-            //startInfo.FileName = xlsConverterPath;
-            //startInfo.UseShellExecute = false;
-
-            //startInfo.RedirectStandardError = true;
-            //startInfo.RedirectStandardOutput = true;
-            //startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-
-            //Process process = null;
-            //process = Process.Start(startInfo);
-            //process.WaitForExit(30000);
-            //if (process.HasExited == false)
-            //    process.Kill();
-            //int exitcode = process.ExitCode;
-            //process.Close();
-            //return exitcode == 0;
-
             // Open a template excel file
-            Workbook book = new Workbook(ExcelTemplateFile);
-            book.CalculateFormula();
-
-            // Make all sheets invisible except first worksheet
-            for (int i = 1; i < book.Worksheets.Count; i++)
+            using (Workbook book = new Workbook(ExcelTemplateFile))
             {
-                book.Worksheets[i].IsVisible = false;
-            }
+                book.CalculateFormula();
 
-            book.Save(PDFTemplateFile, SaveFormat.Pdf);
+                // Make all sheets invisible except first worksheet
+                for (int i = 1; i < book.Worksheets.Count; i++)
+                {
+                    book.Worksheets[i].IsVisible = false;
+                }
+
+                book.Save(PDFTemplateFile, SaveFormat.Pdf);
+            }
 
             //xlsConverter.Program.ConvertNoRotate(ExcelTemplateFile, PDFTemplateFile);
             return File.Exists(PDFTemplateFile);
@@ -105,24 +86,6 @@ namespace PrintWindowsService
         /// <returns>	true if it succeeds, false if it fails. </returns>
         private bool ConvertToBMP()
         {
-            //File.Delete(PDFTemplateFile);
-            //ProcessStartInfo startInfo = new ProcessStartInfo();
-            //startInfo.Arguments = "\"" + ExcelTemplateFile + "\" \"" + BMPTemplateFile + "\"";
-            //startInfo.FileName = xlsConverterPath;
-            //startInfo.UseShellExecute = false;
-
-            //startInfo.RedirectStandardError = true;
-            //startInfo.RedirectStandardOutput = true;
-            //startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-
-            //Process process = null;
-            //process = Process.Start(startInfo);
-            //process.WaitForExit(30000);
-            //if (process.HasExited == false)
-            //    process.Kill();
-            //int exitcode = process.ExitCode;
-            //process.Close();
-            //return exitcode == 0;
             float dpi = 203f;
             if (!float.TryParse(System.Configuration.ConfigurationManager.AppSettings["ZebraPrinterDPI"], out dpi))
             {
@@ -130,34 +93,39 @@ namespace PrintWindowsService
             }
 
             // Open a template excel file
-            Workbook book = new Workbook(ExcelTemplateFile);
-            book.CalculateFormula();
-
-            // Get the first worksheet.
-            Worksheet sheet = book.Worksheets[0];
-
-            // Define ImageOrPrintOptions
-            ImageOrPrintOptions imgOptions = new ImageOrPrintOptions();
-            // Specify the image format
-            imgOptions.ImageType = Aspose.Cells.Drawing.ImageType.Bmp;
-            imgOptions.OnlyArea = true;
-            //imgOptions.OnePagePerSheet = true;
-            //imgOptions.IsCellAutoFit = true;
-            imgOptions.HorizontalResolution = (int)dpi;
-            imgOptions.VerticalResolution = (int)dpi;
-            // Render the sheet with respect to specified image/print options
-            SheetRender sr = new SheetRender(sheet, imgOptions);
-            // Render the image for the sheet
-            Bitmap bitmap = sr.ToImage(0);
-
-            bool rotate = true;
-            using (Image croppedImage = AutoCrop(bitmap))
+            using (Workbook book = new Workbook(ExcelTemplateFile))
             {
-                if (rotate)
+                book.CalculateFormula();
+
+                // Get the first worksheet.
+                Worksheet sheet = book.Worksheets[0];
+
+                // Define ImageOrPrintOptions
+                ImageOrPrintOptions imgOptions = new ImageOrPrintOptions();
+                // Specify the image format
+                imgOptions.ImageType = Aspose.Cells.Drawing.ImageType.Bmp;
+                imgOptions.OnlyArea = true;
+                //imgOptions.OnePagePerSheet = true;
+                //imgOptions.IsCellAutoFit = true;
+                imgOptions.HorizontalResolution = (int)dpi;
+                imgOptions.VerticalResolution = (int)dpi;
+                // Render the sheet with respect to specified image/print options
+                SheetRender sr = new SheetRender(sheet, imgOptions);
+                // Render the image for the sheet
+                using (Bitmap bitmap = sr.ToImage(0))
                 {
-                    croppedImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
+                    bool rotate = true;
+                    using (Image croppedImage = AutoCrop(bitmap))
+                    {
+                        if (rotate)
+                        {
+                            croppedImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
+                        }
+                        croppedImage.Save(BMPTemplateFile);
+                    }
+
+                    //bitmap.Save(BMPTemplateFile);
                 }
-                croppedImage.Save(BMPTemplateFile);
             }
 
             //xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile, dpi, dpi, true);
@@ -254,7 +222,7 @@ namespace PrintWindowsService
 
         public string getPrinterStatus(string printerIpAddress, string printerNo)
         {
-            ZebraPrinterConnection connection = null;
+            Connection connection = null;
             try
             {
                 int port = 9100;
@@ -263,28 +231,28 @@ namespace PrintWindowsService
                     throw new Exception("Printer port is missing in config.");
                 }
 
-                connection = new TcpPrinterConnection(printerIpAddress, port);
+                connection = new TcpConnection(printerIpAddress, port);
                 connection.Open();
                 ZebraPrinter printer = ZebraPrinterFactory.GetInstance(connection);
 
                 PrinterStatus printerStatus = printer.GetCurrentStatus();
-                if (printerStatus.IsReadyToPrint)
+                if (printerStatus.isReadyToPrint)
                 {
                     return "OK";
                 }
-                else if (printerStatus.IsPaused)
+                else if (printerStatus.isPaused)
                 {
                     return "Paused";
                 }
-                else if (printerStatus.IsHeadOpen)
+                else if (printerStatus.isHeadOpen)
                 {
                     return "Head is open";
                 }
-                else if (printerStatus.IsPaperOut)
+                else if (printerStatus.isPaperOut)
                 {
                     return "Out of paper";
                 }
-                else if (printerStatus.IsRibbonOut)
+                else if (printerStatus.isRibbonOut)
                 {
                     return "Ribbon is out";
                 }
@@ -299,7 +267,7 @@ namespace PrintWindowsService
             }
             finally
             {
-                if (connection != null && connection.IsConnected())
+                if (connection != null && connection.Connected)
                     connection.Close();
             }
         }
@@ -312,7 +280,7 @@ namespace PrintWindowsService
         private bool PrintZebra(string printerIpAddress, string width, string height, int JobOrderId, string printerNo)
         {
             bool result = true;
-            ZebraPrinterConnection connection = null;
+            Connection connection = null;
             try
             {
                 if (string.IsNullOrEmpty(printerIpAddress))
@@ -340,29 +308,30 @@ namespace PrintWindowsService
                     throw new Exception(string.Format("Paper height is not integer for {0}.", printerNo));
                 }
 
-                connection = new TcpPrinterConnection(printerIpAddress, port);
+                connection = new TcpConnection(printerIpAddress, port);
                 connection.Open();
                 ZebraPrinter printer = ZebraPrinterFactory.GetInstance(connection);
 
                 PrinterStatus printerStatus = printer.GetCurrentStatus();
-                if (printerStatus.IsReadyToPrint)
+                if (printerStatus.isReadyToPrint)
                 {
                     //printer.GetGraphicsUtil().PrintImage(BMPTemplateFile, 0, 0);
-                    printer.GetGraphicsUtil().PrintImage(BMPTemplateFile, 0, 0, paperWidth, paperHeight, false);
+                    printer.PrintImage(BMPTemplateFile, 0, 0, paperWidth, paperHeight, false);
+                    //result = false;
                 }
-                else if (printerStatus.IsPaused)
+                else if (printerStatus.isPaused)
                 {
                     throw new Exception(string.Format("Cannot Print because the printer {0} is paused.", printerNo));
                 }
-                else if (printerStatus.IsHeadOpen)
+                else if (printerStatus.isHeadOpen)
                 {
                     throw new Exception(string.Format("Cannot Print because the printer {0} head is open.", printerNo));
                 }
-                else if (printerStatus.IsPaperOut)
+                else if (printerStatus.isPaperOut)
                 {
                     throw new Exception(string.Format("Cannot Print because the paper is out for printer {0}.", printerNo));
                 }
-                else if (printerStatus.IsRibbonOut)
+                else if (printerStatus.isRibbonOut)
                 {
                     throw new Exception(string.Format("Cannot Print because the ribbon is out for printer {0}.", printerNo));
                 }
@@ -378,7 +347,7 @@ namespace PrintWindowsService
             }
             finally
             {
-                if (connection != null && connection.IsConnected())
+                if (connection != null && connection.Connected)
                     connection.Close();
             }
 
@@ -540,6 +509,20 @@ namespace PrintWindowsService
             }
 
             return boolEmailLabel;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                eventLog = null;
+            }
         }
     }
 }

@@ -64,9 +64,6 @@ namespace JobOrdersService
             request.ContentLength = body.Length;
             request.ContentType = "application/json";
             request.Credentials = CredentialCache.DefaultNetworkCredentials;
-#if (DEBUG)
-            request.Credentials = new NetworkCredential("atokar", "qcAL0ZEV", "ask-ad");
-#endif
 
             using (Stream stream = request.GetRequestStream())
             {
@@ -106,9 +103,6 @@ namespace JobOrdersService
             request.ContentType = "application/json";
             request.ContentLength = body.Length;
             request.Credentials = CredentialCache.DefaultNetworkCredentials;
-#if (DEBUG)
-            request.Credentials = new NetworkCredential("atokar", "qcAL0ZEV", "ask-ad");
-#endif
 
             using (Stream stream = request.GetRequestStream())
             {
@@ -125,7 +119,7 @@ namespace JobOrdersService
                     response.StatusDescription));
 
                 var encoding = ASCIIEncoding.ASCII;
-                using (var reader = new System.IO.StreamReader(response.GetResponseStream(), encoding))
+                using (var reader = new StreamReader(response.GetResponseStream(), encoding))
                 {
                     string responseText = reader.ReadToEnd();
                 }

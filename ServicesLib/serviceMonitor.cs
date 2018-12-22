@@ -16,6 +16,8 @@ namespace CommonEventSender
         private EventLogEntryType eventType;
         private DateTime eventTime;
 
+        private static bool isEventLogEnabled = true;
+
         /// <summary>
         /// Text of event massage
         /// </summary>
@@ -62,14 +64,17 @@ namespace CommonEventSender
         /// </summary>
         public static void sendMonitorEvent(EventLog eventLog, string message, EventLogEntryType eventType, int eventID)
         {
-            SenderMonitorEvent MonitorEvent = new SenderMonitorEvent(eventLog, message, eventType, eventID);
-            try
+            if (isEventLogEnabled)
             {
-                Instrumentation.Fire(MonitorEvent);
-            }
-            catch (Exception ex)
-            {
-                //new SenderMonitorEvent(eventLog, ex.ToString(), EventLogEntryType.Error);
+                SenderMonitorEvent MonitorEvent = new SenderMonitorEvent(eventLog, message, eventType, eventID);
+                try
+                {
+                    Instrumentation.Fire(MonitorEvent);
+                }
+                catch (Exception ex)
+                {
+                    //new SenderMonitorEvent(eventLog, ex.ToString(), EventLogEntryType.Error);
+                }
             }
         }
     }
