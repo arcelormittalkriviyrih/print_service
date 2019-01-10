@@ -154,6 +154,7 @@
     <Reference Include="ZebraPrinterSdk, Version=2.15.2634.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Zebra.Printer.SDK.2.15.2634\lib\net471\ZebraPrinterSdk.dll</HintPath>
     </Reference>
+	<Reference Include="netstandard" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\ModulesWS\LabelDbData.cs">
