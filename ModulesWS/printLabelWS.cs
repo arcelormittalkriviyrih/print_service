@@ -1,6 +1,4 @@
-﻿using Aspose.Cells;
-using Aspose.Cells.Rendering;
-using CommonEventSender;
+﻿using CommonEventSender;
 using System;
 using System.Diagnostics;
 using System.Drawing;
@@ -63,21 +61,21 @@ namespace PrintWindowsService
         /// <returns>	true if it succeeds, false if it fails. </returns>
         private bool ConvertToPDF()
         {
-            // Open a template excel file
-            using (Workbook book = new Workbook(ExcelTemplateFile))
-            {
-                book.CalculateFormula();
+            //// Open a template excel file
+            //using (Workbook book = new Workbook(ExcelTemplateFile))
+            //{
+            //    book.CalculateFormula();
 
-                // Make all sheets invisible except first worksheet
-                for (int i = 1; i < book.Worksheets.Count; i++)
-                {
-                    book.Worksheets[i].IsVisible = false;
-                }
+            //    // Make all sheets invisible except first worksheet
+            //    for (int i = 1; i < book.Worksheets.Count; i++)
+            //    {
+            //        book.Worksheets[i].IsVisible = false;
+            //    }
 
-                book.Save(PDFTemplateFile, SaveFormat.Pdf);
-            }
+            //    book.Save(PDFTemplateFile, SaveFormat.Pdf);
+            //}
 
-            //xlsConverter.Program.ConvertNoRotate(ExcelTemplateFile, PDFTemplateFile);
+            xlsConverter.Program.ConvertNoRotate(ExcelTemplateFile, PDFTemplateFile);
             return File.Exists(PDFTemplateFile);
         }
 
@@ -92,43 +90,43 @@ namespace PrintWindowsService
                 throw new Exception("Printer DPI is missing in config.");
             }
 
-            // Open a template excel file
-            using (Workbook book = new Workbook(ExcelTemplateFile))
-            {
-                book.CalculateFormula();
+            //// Open a template excel file
+            //using (Workbook book = new Workbook(ExcelTemplateFile))
+            //{
+            //    book.CalculateFormula();
 
-                // Get the first worksheet.
-                Worksheet sheet = book.Worksheets[0];
+            //    // Get the first worksheet.
+            //    Worksheet sheet = book.Worksheets[0];
 
-                // Define ImageOrPrintOptions
-                ImageOrPrintOptions imgOptions = new ImageOrPrintOptions();
-                // Specify the image format
-                imgOptions.ImageType = Aspose.Cells.Drawing.ImageType.Bmp;
-                imgOptions.OnlyArea = true;
-                //imgOptions.OnePagePerSheet = true;
-                //imgOptions.IsCellAutoFit = true;
-                imgOptions.HorizontalResolution = (int)dpi;
-                imgOptions.VerticalResolution = (int)dpi;
-                // Render the sheet with respect to specified image/print options
-                SheetRender sr = new SheetRender(sheet, imgOptions);
-                // Render the image for the sheet
-                using (Bitmap bitmap = sr.ToImage(0))
-                {
-                    bool rotate = true;
-                    using (Image croppedImage = AutoCrop(bitmap))
-                    {
-                        if (rotate)
-                        {
-                            croppedImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
-                        }
-                        croppedImage.Save(BMPTemplateFile);
-                    }
+            //    // Define ImageOrPrintOptions
+            //    ImageOrPrintOptions imgOptions = new ImageOrPrintOptions();
+            //    // Specify the image format
+            //    imgOptions.ImageType = Aspose.Cells.Drawing.ImageType.Bmp;
+            //    imgOptions.OnlyArea = true;
+            //    //imgOptions.OnePagePerSheet = true;
+            //    //imgOptions.IsCellAutoFit = true;
+            //    imgOptions.HorizontalResolution = (int)dpi;
+            //    imgOptions.VerticalResolution = (int)dpi;
+            //    // Render the sheet with respect to specified image/print options
+            //    SheetRender sr = new SheetRender(sheet, imgOptions);
+            //    // Render the image for the sheet
+            //    using (Bitmap bitmap = sr.ToImage(0))
+            //    {
+            //        bool rotate = true;
+            //        using (Image croppedImage = AutoCrop(bitmap))
+            //        {
+            //            if (rotate)
+            //            {
+            //                croppedImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
+            //            }
+            //            croppedImage.Save(BMPTemplateFile);
+            //        }
 
-                    //bitmap.Save(BMPTemplateFile);
-                }
-            }
+            //        //bitmap.Save(BMPTemplateFile);
+            //    }
+            //}
 
-            //xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile, dpi, dpi, true);
+            xlsConverter.Program.Convert(ExcelTemplateFile, BMPTemplateFile, dpi, dpi, true);
             return File.Exists(BMPTemplateFile);
         }
 
@@ -406,15 +404,15 @@ namespace PrintWindowsService
             }
             try
             {
-                try
-                {
-                    Aspose.Cells.License lvLicense = new Aspose.Cells.License();
-                    lvLicense.SetLicense("Aspose.Cells.lic");
-                }
-                catch (Exception ex)
-                {
-                    SenderMonitorEvent.sendMonitorEvent(eventLog, "Aspose.Cells License Error: " + ex.ToString(), EventLogEntryType.Warning);
-                }
+                //try
+                //{
+                //    Aspose.Cells.License lvLicense = new Aspose.Cells.License();
+                //    lvLicense.SetLicense("Aspose.Cells.lic");
+                //}
+                //catch (Exception ex)
+                //{
+                //    SenderMonitorEvent.sendMonitorEvent(eventLog, "Aspose.Cells License Error: " + ex.ToString(), EventLogEntryType.Warning);
+                //}
 
                 if (isPDF)
                     boolConvertLabel = ConvertToPDF();

@@ -71,7 +71,7 @@ namespace CommonEventSender
                 {
                     Instrumentation.Fire(MonitorEvent);
                 }
-                catch (Exception ex)
+                catch //(Exception ex)
                 {
                     //new SenderMonitorEvent(eventLog, ex.ToString(), EventLogEntryType.Error);
                 }
